@@ -57,7 +57,7 @@ class SquareGrid extends PuzzleGrid {
 			for (let i = 0; i < w; i++)
 				this.areamap.set2D(x+i, y+j, area);
 	}
-	removeRect(x, y, w, h, area = 0) {
+	removeRect(x, y, w, h) {
 		for (let j = 0; j < h; j++)
 			for (let i = 0; i < w; i++)
 				this.areamap.set2D(x+i, y+j, null);
@@ -70,9 +70,9 @@ class SquareGrid extends PuzzleGrid {
 		for (let y = 0; y <= this.height; y++)
 			for (let x = 0; x <= this.width; x++) {
 				let cells = (this.areamap.get2D(x-1, y-1, null) != null) << 3
-				          | (this.areamap.get2D(x  , y-1, null) != null) << 2
-						  | (this.areamap.get2D(x-1, y  , null) != null) << 1
-						  | (this.areamap.get2D(x  , y  , null) != null);
+					      | (this.areamap.get2D(x  , y-1, null) != null) << 2
+					      | (this.areamap.get2D(x-1, y  , null) != null) << 1
+					      | (this.areamap.get2D(x  , y  , null) != null);
 				if (!cells) continue;
 				
 				this.addVertAtPoint({x, y});
@@ -83,140 +83,16 @@ class SquareGrid extends PuzzleGrid {
 					this.edgemap.vert.set2D(x, y-1, this.lastEdge);
 				}
 				if (cells & 0b1010) {
-					this.addEdge(this.vertmap.get2D(x-1, y), this.lastVert);
+					this.addEdge(this.vertmap.get2D(x-1, y), this.lastVert, !(cells & 0b1000));
 					this.edgemap.horiz.set2D(x-1, y, this.lastEdge);
 				}
 				
 				if (this.lastCell != null) {
-					if (cells & 0b1000)
-						this.cellmap.set2D(x-1, y-1, this.lastCell);
-					else
-						this.deleteLastCell();
+					this.cellmap.set2D(x-1, y-1, this.lastCell);
 				}
 			}
 		
 		super.finalize();
-	}
-}
-
-class SquareCell {
-	constructor(grid, x, y, value) {
-		this.grid = grid;
-		this.x = x;
-		this.y = y;
-		this.value = value;
-	}
-	
-	get edges() {
-		return [
-			this.grid.edges.vert.get2D(this.x + 1, this.y),
-			this.grid.edges.horiz.get2D(this.x, this.y + 1),
-			this.grid.edges.vert.get2D(this.x, this.y),
-			this.grid.edges.horiz.get2D(this.x, this.y),
-		];
-	}
-	
-	get vertices() {
-		return [[1,1], [0,1], [0,0], [1,0]].map(([a,b]) => this.grid.verts.get2D(this.x + a, this.y + b));
-	}
-	
-	getAdjacent(ind) {
-		let offsets = [[+1, 0],[+1,+1],[ 0,+1],[-1,+1],[-1, 0],[-1,-1],[ 0,-1],[+1,-1]];
-		if (ind?.[0] instanceof Array) offsets = ind;
-		else if (ind instanceof Array) offsets = ind.map(i => offsets[i&7]);
-		if (typeof ind == 'number') {
-			let [a, b] = offsets[ind&7];
-			return this.grid.cells.get2D(this.x + a, this.y + b);
-		}
-		return offsets.map(([a,b]) => this.grid.cells.get2D(this.x + a, this.y + b)).filter(x => x);
-	}
-	get adjacentAll() {
-		return this.getAdjacent();
-	}
-	get adjacentOrtho() {
-		return this.getAdjacent([0, 2, 4, 6]);
-	}
-	get adjacentDiag() {
-		return this.getAdjacent([1, 3, 5, 7]);
-	}
-	
-	get type() {
-		return 'cell';
-	}
-}
-
-class SquareVertex {
-	constructor(grid, x, y, value) {
-		this.grid = grid;
-		this.x = x;
-		this.y = y;
-		this.value = value;
-	}
-	
-	getEdge(ind) {
-		if (ind & 1)
-			return this.grid.edges.horiz.get2D(this.x - (ind&2)/2, this.y);
-		else
-			return this.grid.edges.vert.get2D(this.x, this.y - (ind&2)/2);
-	}
-	
-	get edges() {
-		return [
-			this.grid.edges.vert.get2D(this.x, this.y),
-			this.grid.edges.horiz.get2D(this.x, this.y),
-			this.grid.edges.vert.get2D(this.x, this.y - 1),
-			this.grid.edges.horiz.get2D(this.x - 1, this.y),
-		].filter(x => x);
-	}
-	
-	getCell(ind) {
-		ind &= 3;
-		return this.grid.cells.get2D(this.x - (0 < ind & ind < 3), this.y - (1 < ind));
-	}
-	
-	get cells() {
-		return [[0,0],[1,0],[1,1],[0,1]].map(([a,b]) => this.grid.cells.get2D(this.x - a, this.y - b)).filter(x => x);
-	}
-	
-	get isEdgeOfGrid() {
-		return this.cells.length < 4;
-	}
-	get isCornerOfGrid() {
-		return this.edges.length == 2;
-	}
-	
-	get type() {
-		return 'vertex';
-	}
-}
-
-class SquareEdge {
-	constructor(grid, dir, x, y, value) {
-		this.grid = grid;
-		this.dir = dir;
-		this.x = x;
-		this.y = y;
-		this.value = value;
-	}
-	
-	get vertices() {
-		let coords = [[this.x, this.y], [this.x, this.y]];
-		coords[1][this.dir] += 1;
-		return coords.map(([x,y]) => this.grid.edges[this.dir == 0 ? 'horiz' : 'vert'].get2D(x, y));
-	}
-	
-	get cells() {
-		let coords = [[this.x, this.y], [this.x, this.y]];
-		coords[0][1 - this.dir] -= 1;
-		return coords.map(([x,y]) => this.grid.cells.get2D(x, y)).filter(x => x);
-	}
-	
-	get isEdgeOfGrid() {
-		return this.cells.length == 1;
-	}
-	
-	get type() {
-		return 'edge';
 	}
 }
 

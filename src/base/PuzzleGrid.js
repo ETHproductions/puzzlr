@@ -32,17 +32,20 @@ class PuzzleGrid {
 		}
 	}
 	
-	addEdge(fromVert, toVert, vpos) {
+	addEdge(fromVert, toVert, vpos, noCell) {
 		if (this.#finalized)
 			throw new Error("Cannot modify a finalized grid");
 		
 		if (fromVert.adjacent.includes(toVert)) return;
 		
+		if (typeof vpos != 'object' && typeof noCell == 'undefined')
+			noCell = vpos, vpos = undefined;
+		
 		let newEdge = new GridEdge(this, fromVert, toVert, vpos);
 		this.lastEdge = newEdge;
 		this.lastCell = null;
-		toVert.adjacent.push(fromVert);
-		fromVert.adjacent.push(toVert);
+		toVert.addEdgeTo(fromVert, newEdge);
+		fromVert.addEdgeTo(toVert, newEdge);
 		
 		// From here on out we just need to check if a new cell was created.
 		// If the vertices were not previously connected, a loop cannot have
@@ -60,9 +63,11 @@ class PuzzleGrid {
 			let toInd = cell.verts.indexOf(toVert);
 			if (toInd == -1) continue;
 			
-			this.#splitCell(cell, fromInd, toInd);
+			this.#splitCell(cell, fromInd, toInd, noCell);
 			return;
 		}
+		
+		if (noCell) return;
 		
 		// If the vertices were previously connected and the new edge does not
 		// split an existing cell, we must be creating a new cell
@@ -77,14 +82,15 @@ class PuzzleGrid {
 	// Split a cell in two. The old cell retains the vertex with the lowest ID.
 	// If this vertex is connected to the new edge, the old cell keeps the
 	// first few clockwise vertices.
-	#splitCell(oldCell, fromInd, toInd) {
+	#splitCell(oldCell, fromInd, toInd, noNewCell) {
 		if (fromInd == 0 || (0 < toInd && toInd < fromInd))
 			[fromInd, toInd] = [toInd, fromInd];
 		
 		let newCellVerts = oldCell.verts.slice(fromInd, toInd || oldCell.verts.length);
 		if (toInd == 0) newCellVerts.push(oldCell.verts[0]);
 		
-		this.#addCellFromVerts(newCellVerts);
+		if (!noNewCell)
+			this.#addCellFromVerts(newCellVerts);
 		oldCell.verts.splice(fromInd + 1, newCellVerts.length - 2);
 	}
 	
@@ -128,13 +134,11 @@ class PuzzleGrid {
 		verts = verts.slice(minVertInd).concat(verts.slice(0, minVertInd));
 		let newCell = new GridCell(this, verts);
 		this.lastCell = newCell;
+		
+		// TODO: add cell to all relevant edges, vertices and adjacent cells
+		
 		if (typeof this.onNewCell == 'function')
 			this.onNewCell(newCell);
-	}
-	
-	deleteLastCell() {
-		this.cells.pop();
-		this.lastCell = null;
 	}
 	
 	// Calculate the angle between two edges that share a vertex.
@@ -178,6 +182,9 @@ class PuzzleGrid {
 	get height() {
 		return this.#height;
 	}
+	get finalized() {
+		return this.#finalized;
+	}
 }
 
 class GridCell {
@@ -187,6 +194,7 @@ class GridCell {
 		
 		this.grid = grid;
 		this.verts = verts;
+		// TODO: create list of edges
 		this.vpos = vpos;
 		this.value = value;
 		
@@ -237,8 +245,30 @@ class GridVertex {
 			vert.setNetID(id);
 	}
 	
+	addEdgeTo(vert, edge) {
+		if (typeof vert == 'number')
+			vert = this.grid.verts[vert];
+		
+		let i = 0, dir = this.dirToVert(vert);
+		while (i < this.adjacent.length) {
+			if (dir < this.dirToVert(this.adjacent[i]))
+				i++;
+			else
+				break;
+		}
+		this.adjacent.splice(i, 0, vert);
+		this.edges.splice(i, 0, edge);
+	}
+	
+	dirToVert(vert) {
+		if (typeof vert == 'number')
+			vert = this.grid.verts[vert];
+		
+		return Math.atan2(vert.rpos.y - this.rpos.y, vert.rpos.x - this.rpos.x);
+	}
+	
 	get isEdgeOfGrid() {
-		return this.edges.some(e => e.cells.length < 2);
+		return this.edges.some(e => e.isEdgeOfGrid);
 	}
 	get isCornerOfGrid() {
 		return this.cells.length == 1;
@@ -254,6 +284,7 @@ class GridEdge {
 		this.grid = grid;
 		this.fromVert = fromVert;
 		this.toVert = toVert;
+		this.slope = fromVert.dirToVert(toVert);
 		this.vpos = vpos;
 		this.value = value;
 		
@@ -264,9 +295,6 @@ class GridEdge {
 		this.rightCell = null;
 	}
 	
-	get slope() {
-		return Math.atan2(this.toVert.rpos.y - this.fromVert.rpos.y, this.toVert.rpos.x - this.fromVert.rpos.x);
-	}
 	get isEdgeOfGrid() {
 		return (this.leftCell == null) || (this.rightCell == null);
 	}
