@@ -1,64 +1,64 @@
 let Puzzle = require('./base/Puzzle.js');
 
 const SUM_EQUALS = function (vars, target) {
-	let old_sums = new Set([0]);
-	for (let variable of vars) {
-		let sums = new Set();
-		for (let value of variable.value)
-			for (let sum of old_sums)
-				sums.add(+value + sum);
-		old_sums = sums;
-	}
-	return old_sums.has(+target);
+    let old_sums = new Set([0]);
+    for (let variable of vars) {
+        let sums = new Set();
+        for (let value of variable.value)
+            for (let sum of old_sums)
+                sums.add(+value + sum);
+        old_sums = sums;
+    }
+    return old_sums.has(+target);
 }
 
 let variables = [], constraints = [];
 let varmap = [];
 
-let task = [[-1,1,1,-1,-1,-1,-1,0,-1,-1],[-1,-1,-1,1,-1,1,-1,-1,2,-1],[-1,1,-1,-1,-1,2,-1,1,-1,1],[-1,-1,-1,-1,-1,1,-1,-1,-1,-1],[2,-1,-1,-1,1,-1,1,-1,1,-1],[-1,-1,2,-1,1,-1,-1,2,2,-1],[-1,3,-1,-1,-1,1,-1,1,-1,-1],[-1,-1,-1,-1,-1,-1,3,4,-1,-1],[2,4,5,5,3,-1,-1,-1,-1,1],[-1,2,-1,-1,-1,-1,-1,4,-1,-1]];
+let task = [[-1, 1, 1, -1, -1, -1, -1, 0, -1, -1], [-1, -1, -1, 1, -1, 1, -1, -1, 2, -1], [-1, 1, -1, -1, -1, 2, -1, 1, -1, 1], [-1, -1, -1, -1, -1, 1, -1, -1, -1, -1], [2, -1, -1, -1, 1, -1, 1, -1, 1, -1], [-1, -1, 2, -1, 1, -1, -1, 2, 2, -1], [-1, 3, -1, -1, -1, 1, -1, 1, -1, -1], [-1, -1, -1, -1, -1, -1, 3, 4, -1, -1], [2, 4, 5, 5, 3, -1, -1, -1, -1, 1], [-1, 2, -1, -1, -1, -1, -1, 4, -1, -1]];
 
 console.log("\n\n\n\n\n\nParsing puzzle...");
 
 // set up variables
 for (let y in task) {
-	varmap[y] = [];
-	for (let x in task[y]) {
-		varmap[y][x] = -1;
-		let c = task[y][x];
-		if (c != -1) continue;
-		
-		let variable = {
-			id: variables.length,
-			value: [0, 1],
-			constraints: [],
-			pos: { x: +x, y: +y }
-		};
-		varmap[y][x] = variable.id;
-		variables.push(variable);
-	}
+    varmap[y] = [];
+    for (let x in task[y]) {
+        varmap[y][x] = -1;
+        let c = task[y][x];
+        if (c != -1) continue;
+
+        let variable = {
+            id: variables.length,
+            value: [0, 1],
+            constraints: [],
+            pos: { x: +x, y: +y }
+        };
+        varmap[y][x] = variable.id;
+        variables.push(variable);
+    }
 }
 
 // set up constraints
 for (let y in task) {
-	for (let x in task[y]) {
-		let c = task[y][x];
-		if (c == -1) continue;
-		
-		let constraint = {
-			id: constraints.length,
-			check: SUM_EQUALS,
-			variables: [],
-			target: +c
-		};
-		for ([dx,dy] of [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]]) {
-			let variable = variables[varmap[+y + dy]?.[+x + dx]];
-			if (variable) {
-				constraint.variables.push(variable);
-				variable.constraints.push(constraint);
-			}
-		}
-		constraints.push(constraint);
-	}
+    for (let x in task[y]) {
+        let c = task[y][x];
+        if (c == -1) continue;
+
+        let constraint = {
+            id: constraints.length,
+            check: SUM_EQUALS,
+            variables: [],
+            target: +c
+        };
+        for ([dx, dy] of [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]) {
+            let variable = variables[varmap[+y + dy]?.[+x + dx]];
+            if (variable) {
+                constraint.variables.push(variable);
+                variable.constraints.push(constraint);
+            }
+        }
+        constraints.push(constraint);
+    }
 }
 console.log("Done parsing. Created", variables.length, "variables and", constraints.length, "constraints.");
 

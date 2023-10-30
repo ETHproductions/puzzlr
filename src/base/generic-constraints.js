@@ -1,5 +1,5 @@
 module.exports = {
-	SUM_EQUALS: function(vars, target) {
-		
-	}
+    SUM_EQUALS: function (vars, target) {
+
+    }
 };
