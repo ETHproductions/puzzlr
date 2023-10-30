@@ -4,6 +4,7 @@ class PuzzleGrid {
     #width;
     #height;
     #finalized = false;
+    #edgeMap = new Map();
 
     constructor(w, h = w) {
         if (!(w > 0) || !(h > 0))
@@ -44,6 +45,8 @@ class PuzzleGrid {
         let newEdge = new GridEdge(this, fromVert, toVert, vpos);
         this.lastEdge = newEdge;
         this.lastCell = null;
+        this.#edgeMap.set(fromVert.id + ';' + toVert.id, newEdge);
+        this.#edgeMap.set(toVert.id + ';' + fromVert.id, newEdge);
         toVert.addEdgeTo(fromVert, newEdge);
         fromVert.addEdgeTo(toVert, newEdge);
 
@@ -77,6 +80,12 @@ class PuzzleGrid {
             return;
 
         throw new Error("Attempted to create invalid cell");
+    }
+
+    getEdge(fromVert, toVert) {
+        if (fromVert instanceof GridVertex) fromVert = fromVert.id;
+        if (toVert instanceof GridVertex) toVert = toVert.id;
+        return this.#edgeMap.get(fromVert + ';' + toVert);
     }
 
     // Split a cell in two. The old cell retains the vertex with the lowest ID.
@@ -135,7 +144,17 @@ class PuzzleGrid {
         let newCell = new GridCell(this, verts);
         this.lastCell = newCell;
 
-        // TODO: add cell to all relevant edges, vertices and adjacent cells
+        for (let i = 0; i < verts.length; i++) {
+            let currVert = verts[i], nextVert = verts[i + 1] || verts[0];
+            let vertInd = currVert.adjacent.indexOf(nextVert);
+            currVert.cells[vertInd] = newCell;
+
+            let currEdge = this.getEdge(currVert, nextVert);
+            if (currEdge.fromVert == currVert)
+                currEdge.rightCell = newCell;
+            else
+                currEdge.leftCell = newCell;
+        }
 
         if (typeof this.onNewCell == 'function')
             this.onNewCell(newCell);
@@ -174,6 +193,7 @@ class PuzzleGrid {
         delete this.lastVert;
         delete this.lastEdge;
         delete this.lastCell;
+        for (let cell of this.cells) cell.finalize();
     }
 
     get width() {
@@ -188,28 +208,52 @@ class PuzzleGrid {
 }
 
 class GridCell {
-    constructor(grid, verts, vpos, value) {
+    #adjacent;
+
+    constructor(grid, verts, vpos, variable) {
         if (verts.length < 3)
             throw new Error("Cell must contain at least 3 vertices");
 
         this.grid = grid;
         this.verts = verts;
-        // TODO: create list of edges
+        this.edges = [];
+        for (let i = 0; i < verts.length; i++)
+            this.edges.push(this.grid.getEdge(verts[i], verts[i + 1] || verts[0]));
+
         this.vpos = vpos;
-        this.value = value;
+        this.variable = variable;
 
         this.id = grid.cells.length;
         grid.cells.push(this);
     }
 
-    get adjacentAll() {
+    finalize() {
+        this.#adjacent = this.adjacent;
+    }
 
+    get adjacent() {
+        if (this.#adjacent) return this.#adjacent;
+
+        let adjacent = [];
+        for (let v of this.verts) {
+            let startInd = v.cells.indexOf(this);
+            for (let i = 1; i < v.cells.length - 1; i++) {
+                let cell = v.cells[(startInd + i) % v.cells.length];
+                if (cell != null)
+                    adjacent.push({ type: i == 1 ? 'edge' : 'vert', cell });
+            }
+        }
+        return adjacent;
+    }
+
+    get adjacentAll() {
+        return this.adjacent.map(c => c.cell);
     }
     get adjacentEdge() {
-
+        return this.adjacent.filter(c => c.type == 'edge').map(c => c.cell);
     }
     get adjacentVert() {
-
+        return this.adjacent.filter(c => c.type == 'vert').map(c => c.cell);
     }
 
     get type() {
@@ -218,7 +262,7 @@ class GridCell {
 }
 
 class GridVertex {
-    constructor(grid, rpos, vpos, value) {
+    constructor(grid, rpos, vpos = rpos, variable) {
         if (!(grid instanceof PuzzleGrid))
             throw new Error("new GridVertex() arg 0 must be a PuzzleGrid object");
         if (!(rpos && 'x' in rpos && 'y' in rpos))
@@ -227,7 +271,7 @@ class GridVertex {
         this.grid = grid;
         this.rpos = rpos;
         this.vpos = vpos;
-        this.value = value;
+        this.variable = variable;
 
         this.id = grid.verts.length;
         grid.verts.push(this);
@@ -251,13 +295,14 @@ class GridVertex {
 
         let i = 0, dir = this.angleTo(vert);
         while (i < this.adjacent.length) {
-            if (dir < this.angleTo(this.adjacent[i]))
+            if (dir > this.angleTo(this.adjacent[i]))
                 i++;
             else
                 break;
         }
         this.adjacent.splice(i, 0, vert);
         this.edges.splice(i, 0, edge);
+        this.cells.splice(i, 0, null);
     }
 
     angleTo(vert) {
@@ -280,13 +325,13 @@ class GridVertex {
 }
 
 class GridEdge {
-    constructor(grid, fromVert, toVert, vpos, value) {
+    constructor(grid, fromVert, toVert, vpos, variable) {
         this.grid = grid;
         this.fromVert = fromVert;
         this.toVert = toVert;
         this.slope = fromVert.angleTo(toVert);
         this.vpos = vpos;
-        this.value = value;
+        this.variable = variable;
 
         this.id = grid.edges.length;
         grid.edges.push(this);
