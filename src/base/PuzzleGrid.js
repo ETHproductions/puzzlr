@@ -1,11 +1,29 @@
 const Array2D = require('./Array2D.js');
 
+/**
+ * How to make a custom puzzle grid
+ * 
+ * A grid is created by placing vertices on the plane and connecting them with
+ * edges. A subclass representing a custom grid type (square, hexagonal, etc.)
+ * should first call super(w, h), then use addVert() and addEdge() as required
+ * to create the grid, and finally call super.finalize() to mark the grid as
+ * complete and ready for use. This can all be done in the subclass constructor
+ * or spread out across different methods to further customize your grid.
+ * 
+ * See individual methods below for more info on how to use them.
+ */
 class PuzzleGrid {
     #width;
     #height;
     #finalized = false;
     #edgeMap = new Map();
 
+    /**
+     * Creates a new empty grid with a given width and height, which cannot be
+     * changed.
+     * @param {number} w width of puzzle
+     * @param {number} h height of puzzle
+     */
     constructor(w, h = w) {
         if (!(w > 0) || !(h > 0))
             throw new Error("Grid dimensions must be positive");
@@ -21,7 +39,19 @@ class PuzzleGrid {
         this.lastEdge = null;
     }
 
-    addVert(rpos, conns = [], vpos) {
+    /**
+     * Creates a vertex at a given {x, y} position in the plane and optionally
+     * adds edges to connect it to one or more existing vertices. this.lastVert
+     * will be set to the newly created vertex.
+     * 
+     * @param {{x: number, y: number}} rpos exact position of the vertex in the
+     * plane
+     * @param {GridVertex[] | number[]} conns list of existing vertices to
+     * connect to, by reference or id
+     * @param {object} vpos virtual position for simplfying non-square grids;
+     * can be anything but recommended to be integer {x, y}
+     */
+    addVert(rpos, conns = [], vpos = rpos) {
         if (this.#finalized)
             throw new Error("Cannot modify a finalized grid");
 
@@ -33,13 +63,26 @@ class PuzzleGrid {
         }
     }
 
-    addEdge(fromVert, toVert, vpos, noCell) {
+    /**
+     * Creates an edge from one vertex to another, and creates a cell if the
+     * new edge encloses a space on the plane and noCell is false/not provided.
+     * this.lastEdge will be the newly created edge, and this.lastCell will be
+     * the newly created cell, or null if none was created.
+     * 
+     * @param {GridVertex | number} fromVert one endpoint of the edge
+     * @param {GridVertex | number} toVert other endpoint of the edge
+     * @param {object} vpos virtual position for simplfying non-square grids;
+     * can be anything but recommended to be integer {x, y}
+     * @param {boolean} noCell prevents creating a new cell if this edge
+     * encloses a space in the plane or splits an existing cell
+     */
+    addEdge(fromVert, toVert, vpos, noCell = false) {
         if (this.#finalized)
             throw new Error("Cannot modify a finalized grid");
 
         if (fromVert.adjacent.includes(toVert)) return;
 
-        if (typeof vpos != 'object' && typeof noCell == 'undefined')
+        if (typeof vpos != 'object')
             noCell = vpos, vpos = undefined;
 
         let newEdge = new GridEdge(this, fromVert, toVert, vpos);
@@ -82,15 +125,23 @@ class PuzzleGrid {
         throw new Error("Attempted to create invalid cell");
     }
 
+    /**
+     * Returns the edge connecting two vertices, if one exists.
+     * @param {GridVertex|Number} fromVert 
+     * @param {GridVertex|Number} toVert 
+     * @returns {GridEdge}
+     */
     getEdge(fromVert, toVert) {
         if (fromVert instanceof GridVertex) fromVert = fromVert.id;
         if (toVert instanceof GridVertex) toVert = toVert.id;
         return this.#edgeMap.get(fromVert + ';' + toVert);
     }
 
-    // Split a cell in two. The old cell retains the vertex with the lowest ID.
-    // If this vertex is connected to the new edge, the old cell keeps the
-    // first few clockwise vertices.
+    /**
+     * Split a cell in two. The old cell retains the vertex with the lowest ID.
+     * If this vertex is connected to the new edge, the old cell keeps the
+     * first few clockwise vertices.
+     */
     #splitCell(oldCell, fromInd, toInd, noNewCell) {
         if (fromInd == 0 || (0 < toInd && toInd < fromInd))
             [fromInd, toInd] = [toInd, fromInd];
@@ -103,8 +154,11 @@ class PuzzleGrid {
         oldCell.verts.splice(fromInd + 1, newCellVerts.length - 2);
     }
 
-    // Check for a new cell produced by a new edge, by starting in one direction
-    // and taking the clockwise-most turn at each vertex.
+    /**
+     * Check for a new cell produced by a new edge, by starting in one
+     * direction and taking the clockwise-most turn at each vertex. Returns
+     * true if a new cell is found and created.
+     */
     #checkNewCell(fromVert, toVert) {
         let startVert = toVert;
         let allVerts = [], totalAngle = 0;
@@ -134,6 +188,10 @@ class PuzzleGrid {
         return false;
     }
 
+    /**
+     * Creates a cell from a given list of vertices. The list is rotated such
+     * that the vertex with the lowest ID is placed first.
+     */
     #addCell(verts) {
         let minVertInd = 0;
         for (let i = 1; i < verts.length; i++)
@@ -160,8 +218,12 @@ class PuzzleGrid {
             this.onNewCell(newCell);
     }
 
-    // Calculate the angle between two edges that share a vertex.
-    // Value is in [-pi, pi); straight = 0, clockwise > 0, ccw < 0.
+    /**
+     * Calculates the angle between two edges that share a vertex.
+     * @param {GridEdge} edge1 
+     * @param {GridEdge} edge2 
+     * @returns {Number} angle in [-pi, pi); straight = 0, cw > 0, ccw < 0
+     */
     angleBetweenEdges(edge1, edge2) {
         if (edge1 == edge2) return -Math.PI;
 
@@ -180,15 +242,24 @@ class PuzzleGrid {
         return this.angleThroughVertex(vert1, pivot, vert2);
     }
 
-    // Calculate the angle between two vertices through a pivot point.
-    // Value is in [-pi, pi); straight = 0, clockwise > 0, ccw < 0.
+    /**
+     * Calculates the angle between two vertices through a pivot point.
+     * @param {GridVertex} vert1 
+     * @param {GridVertex} pivot 
+     * @param {GridVertex} vert2 
+     * @returns {Number} angle in [-pi, pi); straight = 0, cw > 0, ccw < 0
+     */
     angleThroughVertex(vert1, pivot, vert2) {
         let slope1 = Math.atan2(pivot.rpos.y - vert1.rpos.y, pivot.rpos.x - vert1.rpos.x);
         let slope2 = Math.atan2(vert2.rpos.y - pivot.rpos.y, vert2.rpos.x - pivot.rpos.x);
         return (slope2 - slope1 + 3 * Math.PI) % (2 * Math.PI) - Math.PI;
     }
 
+    /**
+     * Marks the grid as complete and ready to use.
+     */
     finalize() {
+        if (this.#finalized) return;
         this.#finalized = true;
         delete this.lastVert;
         delete this.lastEdge;
@@ -208,9 +279,19 @@ class PuzzleGrid {
 }
 
 class GridCell {
+    // Cache of adjacent cells, in format { cell, type: 'edge' | 'vert' }
     #adjacent;
 
-    constructor(grid, verts, vpos, variable) {
+    /**
+     * Creates a new grid cell out of a list of vertices.
+     * @param {PuzzleGrid} grid the grid this cell belongs to
+     * @param {GridVertex[]} verts vertices comprising the corners of the cell,
+     * clockwise starting with the lowest ID
+     * @param {Object} vpos virtual position for simplfying non-square grids;
+     * can be anything but recommended to be integer {x, y}
+     * @param {*} variable puzzle variable object associated with this cell
+     */
+    constructor(grid, verts, vpos = null, variable = null) {
         if (verts.length < 3)
             throw new Error("Cell must contain at least 3 vertices");
 
@@ -227,6 +308,10 @@ class GridCell {
         grid.cells.push(this);
     }
 
+    /**
+     * Do anything required to finalize the grid, which currently includes:
+     * - cache list of adjacent cells
+     */
     finalize() {
         this.#adjacent = this.adjacent;
     }
@@ -246,12 +331,24 @@ class GridCell {
         return adjacent;
     }
 
+    /**
+     * List of all cells adjacent to this one by edge or vertex, starting in
+     * the top left and moving clockwise.
+     */
     get adjacentAll() {
         return this.adjacent.map(c => c.cell);
     }
+    /**
+     * List of all cells directly adjacent to this one, starting in the top
+     * left and moving clockwise.
+     */
     get adjacentEdge() {
         return this.adjacent.filter(c => c.type == 'edge').map(c => c.cell);
     }
+    /**
+     * List of all cells that share a corner with this one, starting in the
+     * top-left and moving clockwise.
+     */
     get adjacentVert() {
         return this.adjacent.filter(c => c.type == 'vert').map(c => c.cell);
     }
@@ -262,7 +359,15 @@ class GridCell {
 }
 
 class GridVertex {
-    constructor(grid, rpos, vpos = rpos, variable) {
+    /**
+     * Creates a new grid vertex at a point in the plane.
+     * @param {PuzzleGrid} grid the grid this vertex belongs to
+     * @param {{x: number, y: number}} rpos position of the vertex in the plane
+     * @param {Object} vpos virtual position for simplfying non-square grids;
+     * can be anything but recommended to be integer {x, y}
+     * @param {*} variable puzzle variable object associated with this vertex
+     */
+    constructor(grid, rpos, vpos = rpos, variable = null) {
         if (!(grid instanceof PuzzleGrid))
             throw new Error("new GridVertex() arg 0 must be a PuzzleGrid object");
         if (!(rpos && 'x' in rpos && 'y' in rpos))
@@ -282,6 +387,10 @@ class GridVertex {
         this.adjacent = [];
     }
 
+    /**
+     * Sets the ID for the network of vertices connected to this one.
+     * @param {number} id 
+     */
     setNetID(id) {
         if (this.netid == id) return;
         this.netid = id;
@@ -289,7 +398,15 @@ class GridVertex {
             vert.setNetID(id);
     }
 
+    /**
+     * Adds a vertex to the list of those connected with this one.
+     * @param {GridVertex} vert vertex to be connected
+     * @param {GridEdge} edge edge connecting this vertex to the other
+     */
     addEdgeTo(vert, edge) {
+        if (this.grid.finalized)
+            throw new Error("Cannot modify a finalized grid");
+
         if (typeof vert == 'number')
             vert = this.grid.verts[vert];
 
@@ -305,6 +422,11 @@ class GridVertex {
         this.cells.splice(i, 0, null);
     }
 
+    /**
+     * Calculate the angle of the line from this vertex to another.
+     * @param {GridVertex} vert 
+     * @returns {number} angle in (-pi, pi]
+     */
     angleTo(vert) {
         if (typeof vert == 'number')
             vert = this.grid.verts[vert];
@@ -325,7 +447,16 @@ class GridVertex {
 }
 
 class GridEdge {
-    constructor(grid, fromVert, toVert, vpos, variable) {
+    /**
+     * Creates a new grid edge between two vertices.
+     * @param {PuzzleGrid} grid the grid this edge belongs to
+     * @param {GridVertex} fromVert 
+     * @param {GridVertex} toVert 
+     * @param {Object} vpos virtual position for simplfying non-square grids;
+     * can be anything but recommended to be integer {x, y}
+     * @param {*} variable puzzle variable object associated with this edge
+     */
+    constructor(grid, fromVert, toVert, vpos = null, variable = null) {
         this.grid = grid;
         this.fromVert = fromVert;
         this.toVert = toVert;
