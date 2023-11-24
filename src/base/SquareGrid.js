@@ -2,6 +2,12 @@ const PuzzleGrid = require('./PuzzleGrid.js');
 const Array2D = require('./Array2D.js');
 
 class SquareGrid extends PuzzleGrid {
+    /**
+     * Creates a new empty square grid with a given width and height, which
+     * cannot be changed.
+     * @param {number} w width of puzzle
+     * @param {number} h height of puzzle
+     */
     constructor(w, h = w) {
         if (!(w > 0) || w % 1 !== 0 || !(h > 0) || h % 1 !== 0)
             throw new Error("Grid dimensions must be positive integers");
@@ -16,15 +22,25 @@ class SquareGrid extends PuzzleGrid {
         };
     }
 
+    /**
+     * Creates a new SquareGrid from an array of {x, y} coordinates.
+     * @param {{x: Number, y: Number}[]} coords array of coords that describe the grid area
+     * @returns new SquareGrid with given coordinates
+     */
     static fromCoords(coords) {
         if (!(coords instanceof Array && 'x' in coords[0] && 'y' in coords[0]))
             throw new Error("SquareGrid.fromCoords arg 0 must be an array of {x, y} values");
 
         return SquareGrid.fromAreas([coords]);
-
     }
 
-    static fromAreas(areas, value) {
+    /**
+     * Creates a new SquareGrid split into a series of areas.
+     * @param {{x: Number, y: Number}[][]} areas array of arrays of coordinates that each
+     * describe an area in the grid 
+     * @returns new SquareGrid with given areas
+     */
+    static fromAreas(areas) {
         if (!(areas instanceof Array && areas[0] instanceof Array && 'x' in areas[0][0] && 'y' in areas[0][0]))
             throw new Error("SquareGrid.fromAreas argument 0 must be an array of arrays of coordinates");
 
@@ -46,47 +62,86 @@ class SquareGrid extends PuzzleGrid {
         return grid;
     }
 
+    /**
+     * Adds a cell to this SquareGrid at a given coordinate.
+     * @param {Number} x 
+     * @param {Number} y 
+     * @param {Number} area optional ID of area that this cell belongs to
+     */
     addCell(x, y, area = 0) {
         this.areamap.set2D(x, y, area);
     }
+    /**
+     * Removes a cell from this SquareGrid at a given coordinate.
+     * @param {Number} x 
+     * @param {Number} y 
+     */
     removeCell(x, y) {
         this.areamap.set2D(x, y, null);
     }
+    /**
+     * Adds a rectangle of cells to this SquareGrid.
+     * @param {Number} x 
+     * @param {Number} y 
+     * @param {Number} w 
+     * @param {Number} h 
+     * @param {Number} area optional ID of area that these cells belong to
+     */
     addRect(x, y, w, h, area = 0) {
         for (let j = 0; j < h; j++)
             for (let i = 0; i < w; i++)
                 this.areamap.set2D(x + i, y + j, area);
     }
+    /**
+     * Removes a rectangle of cells from this SquareGrid.
+     * @param {Number} x 
+     * @param {Number} y 
+     * @param {Number} w 
+     * @param {Number} h 
+     */
     removeRect(x, y, w, h) {
         for (let j = 0; j < h; j++)
             for (let i = 0; i < w; i++)
                 this.areamap.set2D(x + i, y + j, null);
     }
+    /**
+     * Fills the entire width and height of this SquareGrid with cells.
+     */
     fill() {
         this.addRect(0, 0, this.width, this.height);
     }
 
+    /**
+     * Prepares this SquareGrid for use by converting the list of coordinates
+     * into actual vertex, edge and cell objects.
+     */
     finalize() {
         for (let y = 0; y <= this.height; y++)
             for (let x = 0; x <= this.width; x++) {
+                // For each possible vertex location:
                 let cells = (this.areamap.get2D(x - 1, y - 1, null) != null) << 3
                     | (this.areamap.get2D(x, y - 1, null) != null) << 2
                     | (this.areamap.get2D(x - 1, y, null) != null) << 1
                     | (this.areamap.get2D(x, y, null) != null);
+                // If there are no cells touching this vertex, don't create one
                 if (!cells) continue;
 
                 this.addVert({ x, y });
                 this.vertmap.set2D(x, y, this.lastVert);
 
+                // Create a vertical edge from this cell, if necessary
                 if (cells & 0b1100) {
                     this.addEdge(this.vertmap.get2D(x, y - 1), this.lastVert);
                     this.edgemap.vert.set2D(x, y - 1, this.lastEdge);
                 }
+                // Create a horizontal edge from this cell, if necessary
+                // If there isn't a cell to the top left, avoid creating one
                 if (cells & 0b1010) {
                     this.addEdge(this.vertmap.get2D(x - 1, y), this.lastVert, !(cells & 0b1000));
                     this.edgemap.horiz.set2D(x - 1, y, this.lastEdge);
                 }
 
+                // Finally, capture the cell that was created, if any
                 if (this.lastCell != null) {
                     this.cellmap.set2D(x - 1, y - 1, this.lastCell);
                 }
