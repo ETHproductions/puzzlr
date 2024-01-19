@@ -289,9 +289,8 @@ class GridCell {
      * clockwise starting with the lowest ID
      * @param {Object} vpos virtual position for simplfying non-square grids;
      * can be anything but recommended to be integer {x, y}
-     * @param {*} variable puzzle variable object associated with this cell
      */
-    constructor(grid, verts, vpos = null, variable = null) {
+    constructor(grid, verts, vpos = null) {
         if (verts.length < 3)
             throw new Error("Cell must contain at least 3 vertices");
 
@@ -302,7 +301,6 @@ class GridCell {
             this.edges.push(this.grid.getEdge(verts[i], verts[i + 1] || verts[0]));
 
         this.vpos = vpos;
-        this.variable = variable;
 
         this.id = grid.cells.length;
         grid.cells.push(this);
@@ -365,9 +363,8 @@ class GridVertex {
      * @param {{x: number, y: number}} rpos position of the vertex in the plane
      * @param {Object} vpos virtual position for simplfying non-square grids;
      * can be anything but recommended to be integer {x, y}
-     * @param {*} variable puzzle variable object associated with this vertex
      */
-    constructor(grid, rpos, vpos = rpos, variable = null) {
+    constructor(grid, rpos, vpos = rpos) {
         if (!(grid instanceof PuzzleGrid))
             throw new Error("new GridVertex() arg 0 must be a PuzzleGrid object");
         if (!(rpos && 'x' in rpos && 'y' in rpos))
@@ -376,7 +373,6 @@ class GridVertex {
         this.grid = grid;
         this.rpos = rpos;
         this.vpos = vpos;
-        this.variable = variable;
 
         this.id = grid.verts.length;
         grid.verts.push(this);
@@ -454,15 +450,13 @@ class GridEdge {
      * @param {GridVertex} toVert 
      * @param {Object} vpos virtual position for simplfying non-square grids;
      * can be anything but recommended to be integer {x, y}
-     * @param {*} variable puzzle variable object associated with this edge
      */
-    constructor(grid, fromVert, toVert, vpos = null, variable = null) {
+    constructor(grid, fromVert, toVert, vpos = null) {
         this.grid = grid;
         this.fromVert = fromVert;
         this.toVert = toVert;
         this.slope = fromVert.angleTo(toVert);
         this.vpos = vpos;
-        this.variable = variable;
 
         this.id = grid.edges.length;
         grid.edges.push(this);

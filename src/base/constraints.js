@@ -1,21 +1,28 @@
+class Constraint {
+    constructor(puzzle, check) {
+        this.puzzle = null;
+        this.id = puzzle.contraints.length;
+        puzzle.contraints.push(this);
+        this.target = null;
+        this.check = check;
+    }
+}
+
 // constraint that only involves a fixed set of variables
-class FixedConstraint {
+class FixedConstraint extends Constraint {
     /**
      * Create a FixedConstraint out of a check function.
      * The function should take params:
      * - vars: array of variable objects
      * - target: some value to be aimed for; up to the function what this means
      */
-    constructor(check) {
-        this.puzzle = null;
-        this.variables = null;
-        this.id = null;
-        this.target = null;
-        this.check = check;
+    constructor(puzzle, check) {
+        super(puzzle, check);
+        this.variables = [];
     }
 
     apply(puzzle, coords, targets) {
-
+        this.variables.push(targets);
     }
 
     /**
@@ -70,13 +77,13 @@ class FixedConstraint {
 /**
  * What does a FuzzyConstraint look like, exactly?
  * Some examples:
- * - Nurikabe: each clue n belongs to an island of size n
- * - Battleships: there must be exactly n 1-ships, m 2-ships, p 3-ships, etc.
- * - Galaxies: each galaxy must be rotationally symmetric
  * - Shakashaka: each unshaded area must be a rectangle
  * - Norinori: each shaded cell must touch exactly one other shaded cell
  * - Star battle: each star cannot be adjacent to another, even diagonally
  * - Any other puzzle that requires things placed to not be adjacent
+ * - Nurikabe: each clue n belongs to an island of size n
+ * - Galaxies: each galaxy must be rotationally symmetric
+ * - Battleships: there must be exactly n 1-ships, m 2-ships, p 3-ships, etc.
  */
 class FuzzyConstraint {
     /**
@@ -85,13 +92,9 @@ class FuzzyConstraint {
      * - 
      * - target: some value to be aimed for; up to the function what this means
      */
-    constructor(check) {
-        this.puzzle = null;
-        this.variables = null;
-        this.id = null;
-        this.target = null;
-        this.check = check;
+    constructor(puzzle, check) {
+        super(puzzle, check);
     }
 }
 
-module.exports = { FixedConstraint, GlobalConstraint };
+module.exports = { FixedConstraint, FuzzyConstraint };

@@ -149,6 +149,36 @@ class SquareGrid extends PuzzleGrid {
 
         super.finalize();
     }
+
+    /**
+     * Returns the cells in each row as an Array of Arrays.
+     */
+    get cellRows() {
+        let rows = [];
+        for (let y = 0; y < this.height; y++) {
+            let row = [];
+            for (let x = 0; x < this.width; x++) {
+                row.push(this.cellmap.get2D(x, y));
+            }
+            rows.push(row);
+        }
+        return rows;
+    }
+
+    /**
+     * Returns the cells in each column as an Array of Arrays.
+     */
+    get cellCols() {
+        let cols = [];
+        for (let x = 0; x < this.width; x++) {
+            let col = [];
+            for (let y = 0; y < this.height; y++) {
+                col.push(this.cellmap.get2D(x, y));
+            }
+            cols.push(col);
+        }
+        return cols;
+    }
 }
 
 module.exports = SquareGrid;
