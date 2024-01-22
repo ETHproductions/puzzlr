@@ -120,9 +120,9 @@ class SquareGrid extends PuzzleGrid {
             for (let x = 0; x <= this.width; x++) {
                 // For each possible vertex location:
                 let cells = (this.areamap.get2D(x - 1, y - 1, null) != null) << 3
-                    | (this.areamap.get2D(x, y - 1, null) != null) << 2
-                    | (this.areamap.get2D(x - 1, y, null) != null) << 1
-                    | (this.areamap.get2D(x, y, null) != null);
+                          | (this.areamap.get2D(x    , y - 1, null) != null) << 2
+                          | (this.areamap.get2D(x - 1, y    , null) != null) << 1
+                          | (this.areamap.get2D(x    , y    , null) != null);
                 // If there are no cells touching this vertex, don't create one
                 if (!cells) continue;
 
@@ -144,6 +144,7 @@ class SquareGrid extends PuzzleGrid {
                 // Finally, capture the cell that was created, if any
                 if (this.lastCell != null) {
                     this.cellmap.set2D(x - 1, y - 1, this.lastCell);
+                    this.lastCell.vpos = { x: x - 1, y: y - 1 };
                 }
             }
 

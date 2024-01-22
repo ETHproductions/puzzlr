@@ -25,9 +25,28 @@ class Puzzle {
      * - target: target value for the check function
      * - variables: array of variables which this constraint involves
      */
-    constructor(variables, constraints) {
-        this.variables = variables;
-        this.constraints = constraints;
+    constructor(grid) {
+        this.grid = grid;
+        this.variables = [];
+        this.constraints = [];
+    }
+
+    addVariable(ref, value) {
+        ref.value = value;
+        ref.var_id = this.variables.length;
+        if (ref.constraints == undefined)
+            ref.constraints = [];
+        this.variables.push(ref);
+    }
+
+    addConstraint(check, variables, target) {
+        let constraint = { id: this.constraints.length, check, variables, target };
+        this.constraints.push(constraint);
+        for (let variable of variables) {
+            if (variable.constraints == undefined)
+                variable.constraints = [];
+            variable.constraints.push(constraint);
+        }
     }
 
     /**
@@ -63,7 +82,7 @@ class Puzzle {
 
         // Level 0: check whether any possible value for each variable immediat-
         // ely breaks any of its constraints, and remove the ones that do
-        for (let constraint of this.partsol.constraints)
+        for (let constraint of this.constraints)
             for (let variable of constraint.variables)
                 this.partsol.check_queue.push({ variable, constraint, deduct_id: '-1' });
 
@@ -79,7 +98,7 @@ class Puzzle {
             console.log('Found simplifications');
             return this;
         }
-        if (this.partsol.variables.every(v => v.value.length == 1)) {
+        if (this.partsol.values.every(v => v.length == 1)) {
             console.log('Puzzle solved');
             this.partsol.status = 'solved';
             return this;
@@ -94,7 +113,6 @@ class Puzzle {
         // results in contradiction or agreements (same deductions from all
         // values of a variable)
         console.log('Starting level 1 search...');
-        this.current_deduct_id.push(this.partsol.deductions_made.length);
         let level_1_queue = [];
         for (let variable of this.partsol.variables) if (variable.value.length > 1) {
             let partsols = [];
@@ -103,15 +121,13 @@ class Puzzle {
                 let new_partsol = new PartialSolution(this, 1, this.partsol.variables, this.partsol.constraints);
                 this.options.debug >= 1 && console.log('Setting variable', variable.id, `(${variable.pos.x},${variable.pos.y})`, 'to', value);
                 new_partsol.variables[variable.id].value = [value];
-                this.current_deduct_id.push('(' + variable.id + ':' + value + ')');
                 for (let constraint of new_partsol.variables[variable.id].constraints) {
                     for (let subvariable of constraint.variables)
-                        new_partsol.check_queue.push({ variable: subvariable, constraint, deduct_id: this.current_deduct_id.join('.') });
+                        new_partsol.check_queue.push({ variable: subvariable, constraint });
                 }
                 this.options.debug >= 1 && console.log('>>>>>>>>>>>>>>>>');
                 new_partsol.simplify();
                 this.options.debug >= 1 && console.log('<<<<<<<<<<<<<<<<');
-                this.current_deduct_id.pop();
                 if (new_partsol.status == 'contradiction') {
                     this.options.debug >= 1 && console.log('Variable', variable.id, `(${variable.pos.x},${variable.pos.y})`, 'with value', value, 'causes a contradiction');
                     contradictions.push({ variable, value });
@@ -135,36 +151,14 @@ class Puzzle {
 }
 
 class PartialSolution {
-    constructor(puzzle, level, variables = puzzle.variables, constraints = puzzle.constraints) {
+    constructor(puzzle, level) {
         this.puzzle = puzzle;
         this.id = this.puzzle.all_partsols.length;
         this.puzzle.all_partsols.push(this);
-        this.variables = [];
-        this.constraints = [];
+        this.values = [];
 
-        for (let variable of variables)
-            this.variables.push({
-                partsol_id: this.id,
-                id: variable.id,
-                pos: variable.pos,
-                value: variable.value.slice(),
-                constraints: variable.constraints,
-                deduct_ids: []
-            });
-        for (let constraint of constraints)
-            this.constraints.push({
-                partsol_id: this.id,
-                id: constraint.id,
-                check: constraint.check,
-                target: constraint.target,
-                variables: constraint.variables,
-                deduct_ids: []
-            });
-
-        for (let variable of this.variables)
-            variable.constraints = variable.constraints.map(c => this.constraints[c.id]);
-        for (let constraint of this.constraints)
-            constraint.variables = constraint.variables.map(v => this.variables[v.id]);
+        for (let variable of puzzle.variables)
+            this.values.push(variable.value.slice());
 
         this.level = level;
         this.check_queue = [];
@@ -173,8 +167,14 @@ class PartialSolution {
         this.status = "partial";
     }
 
-    debug_log(level, ...args) {
-        if (this.puzzle.options.debug < level) return;
+    clone() {
+        let ps = new PartialSolution(this.puzzle, this.level + 1);
+        ps.values = this.values.map(v => v.slice());
+        return ps;
+    }
+
+    debug_log(debug_level, ...args) {
+        if (this.puzzle.options.debug < debug_level) return;
         args[0] = " ".repeat(4 * this.level).concat(args[0]);
         console.log.apply(null, args);
     }
@@ -205,27 +205,27 @@ class PartialSolution {
     next_check() {
         let check = this.check_queue.shift();
         let variable = check.variable;
-        if (variable.value.length == 1)
+        let values = variable.value;
+        if (values.length == 1)
             return true;
         let constraint = check.constraint;
         let var_id = variable.id;
-        this.debug_log(3, " Checking variable", variable.id, `(${variable.pos.x},${variable.pos.y})`, "on constraint", constraint.id, "per deduction", check.deduct_id);
-
-        let values = variable.value;
+        this.debug_log(3, " Checking variable", variable.id, `(${variable.vpos?.x},${variable.vpos?.y})`, "on constraint", constraint.id);
 
         for (let value of values) {
             variable.value = [value];
             this.puzzle.global_stats.total_constraint_checks++;
-            if (!constraint.check(constraint.variables, constraint.target)) {
-                if (!this.deduct_queue.find(d => d.variable == variable && d.value == value)) {
-                    this.deduct_queue.push({ variable, value, constraint, prior_id: check.deduct_id });
-                    this.debug_log(2, "  Variable", variable.id, `(${variable.pos.x},${variable.pos.y})`, "with value", value, "fails constraint", constraint.id);
-                    if (values.every(v => ++this.puzzle.global_stats.total_contradiction_checks && this.deduct_queue.find(d => d.variable == variable && d.value == v))) {
-                        this.debug_log(2, "  Contradiction! Aborting solve...");
-                        this.status = "contradiction";
-                        return false;
-                    }
-                }
+            if (constraint.check(constraint.variables, constraint.target))
+                continue;
+            if (this.deduct_queue.find(d => d.variable == variable && d.value == value))
+                continue;
+
+            this.deduct_queue.push({ variable, value, constraint });
+            this.debug_log(2, "  Variable", variable.id, `(${variable.vpos?.x},${variable.vpos?.y})`, "with value", value, "fails constraint", constraint.id);
+            if (values.every(v => ++this.puzzle.global_stats.total_contradiction_checks && this.deduct_queue.find(d => d.variable == variable && d.value == v))) {
+                this.debug_log(2, "  Contradiction! Aborting solve...");
+                this.status = "contradiction";
+                return false;
             }
         }
 
@@ -235,15 +235,15 @@ class PartialSolution {
 
     next_deduct() {
         let deduction = this.deduct_queue.shift();
-        deduction.id = [...this.puzzle.current_deduct_id, this.deductions_made.length].join('.');
+        deduction.id = this.deductions_made.length;
         this.deductions_made.push(deduction);
         let variable = deduction.variable;
 
-        this.debug_log(1, "Deduction", deduction.id, ": variable", variable.id, `(${variable.pos.x},${variable.pos.y})`, "cannot have value", deduction.value, "as per deduction(s)", this.puzzle.options.mode == 'fast' ? deduction.constraint.deduct_ids : deduction.prior_id);
+        this.debug_log(1, "Deduction", deduction.id, ": variable", variable.id, `(${variable.vpos?.x},${variable.vpos?.y})`, "cannot have value", deduction.value);
         variable.value.splice(variable.value.indexOf(deduction.value), 1);
-        variable.deduct_ids.push(deduction.id);
+        this.values[variable.id] = variable.value;
         if (variable.value.length == 1) {
-            this.debug_log(1, "  Variable", variable.id, `(${variable.pos.x},${variable.pos.y})`, "has value", variable.value[0], "as per deduction(s)", variable.deduct_ids);
+            this.debug_log(1, "  Variable", variable.id, `(${variable.vpos?.x},${variable.vpos?.y})`, "has value", variable.value[0]);
         } else if (variable.value.length == 0) {
             this.debug_log(1, "  Contradiction! Aborting solve...");
             this.status = "contradiction";
@@ -251,11 +251,10 @@ class PartialSolution {
         }
 
         for (let constraint of variable.constraints) {
-            constraint.deduct_ids.push(deduction.id);
             for (let variable of constraint.variables) if (variable.value.length > 1) {
                 let existing_check = this.check_queue.findIndex(x => x.variable.id == variable.id && x.constraint.id == constraint.id);
                 if (existing_check == -1)
-                    this.check_queue.push({ variable, constraint, deduct_id: deduction.id });
+                    this.check_queue.push({ variable, constraint });
             }
         }
 
