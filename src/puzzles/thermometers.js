@@ -4,15 +4,11 @@ const SquareGrid = require('../base/SquareGrid.js');
 
 class ThermometersPuzzle extends Puzzle {
     constructor(areas, task) {
-        super();
-        this.grid = SquareGrid.fromAreas(areas);
+        super(SquareGrid.fromAreas(areas));
         if (this.grid.width + this.grid.height != task.length)
             throw new Error("Task length must equal width of grid plus height of grid");
         this.areas = areas;
-        let var_id = 0;
-        this.variables = [];
         this.structures = { thermo: [] };
-        this.constraints = [];
 
         const THERMO_LENGTH = function([thermo, cell], target) {
             if (cell.value.includes(0) && thermo.value.some(v => v <= target))
@@ -22,7 +18,8 @@ class ThermometersPuzzle extends Puzzle {
             return false;
         };
         for (let area of areas) {
-            let thermo = { id: this.structures.thermo.length, vars: [], value: [0] };
+            let thermo = { vars: [] };
+            this.addVariable(thermo, [0], false);
             for (let pos of area) {
                 let cell = this.grid.cellmap.get2D(pos.x, pos.y);
                 this.addVariable(cell, [0, 1]);
@@ -42,9 +39,9 @@ class ThermometersPuzzle extends Puzzle {
     }
 }
 
-let testPuzzle = new ThermometersPuzzle([[{ x: 0, y: 0 }, { x: 0, y: 1 }], [{ x: 1, y: 1 }, { x: 1, y: 0 }]], [1, 1, 1, 1]);
-//let testPuzzle = new ThermometersPuzzle([[{x:0,y:0},{x:1,y:0},{x:2,y:0}],[{x:3,y:1},{x:3,y:0}],[{x:0,y:1},{x:1,y:1},{x:2,y:1}],[{x:0,y:2},{x:0,y:3}],[{x:1,y:2},{x:1,y:3}],[{x:2,y:2},{x:3,y:2}],[{x:3,y:3},{x:2,y:3}]], [2,2,1,2,3,2,1,1]);
+//let testPuzzle = new ThermometersPuzzle([[{ x: 0, y: 0 }, { x: 0, y: 1 }], [{ x: 1, y: 1 }, { x: 1, y: 0 }]], [1, 1, 1, 1]);
+let testPuzzle = new ThermometersPuzzle([[{x:0,y:0},{x:1,y:0},{x:2,y:0}],[{x:3,y:1},{x:3,y:0}],[{x:0,y:1},{x:1,y:1},{x:2,y:1}],[{x:0,y:2},{x:0,y:3}],[{x:1,y:2},{x:1,y:3}],[{x:2,y:2},{x:3,y:2}],[{x:3,y:3},{x:2,y:3}]], [2,2,1,2,3,2,1,1]);
 console.log(testPuzzle);
-testPuzzle.solve({ max_depth: 0, debug: Infinity });
+testPuzzle.solve({ max_depth: 1, debug: 3 });
 for (let row of testPuzzle.grid.cellRows)
     console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0] == 1 ? "X" : "_").join(" "));

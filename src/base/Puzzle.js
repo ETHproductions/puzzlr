@@ -31,9 +31,10 @@ class Puzzle {
         this.constraints = [];
     }
 
-    addVariable(ref, value) {
+    addVariable(ref, value, must_be_unique = true) {
         ref.value = value;
         ref.var_id = this.variables.length;
+        ref.must_be_unique = must_be_unique;
         if (ref.constraints == undefined)
             ref.constraints = [];
         this.variables.push(ref);
@@ -47,6 +48,22 @@ class Puzzle {
                 variable.constraints = [];
             variable.constraints.push(constraint);
         }
+    }
+    
+    debug_log(debug_level, ...args) {
+        if (this.options.debug < debug_level) return;
+        args[0] = " ".repeat(4 * this.search_depth).concat(args[0]);
+        console.log.apply(null, args);
+    }
+
+    format_var(variable) {
+        if (variable.vpos)
+            return `V${ variable.var_id } @(${ variable.vpos.x },${ variable.vpos.y})`;
+        return `S${ variable.var_id }`;
+    }
+
+    format_con(constraint) {
+        return `C${ constraint.id } #${ constraint.check.name }`;
     }
 
     /**
@@ -107,6 +124,11 @@ class Puzzle {
             if (next_depth_queue.length == 0) {
                 console.log('Starting level 1 search...');
                 next_depth_queue = this.next_depth();
+                if (!next_depth_queue) {
+                    this.status = 'contradiction';
+                    this.debug_log(1, "  Contradiction! Aborting solve...");
+                    return this;
+                }
                 if (next_depth_queue.length == 0) {
                     this.status = 'unsolvable';
                     console.log('Depth not supported!');
@@ -129,12 +151,6 @@ class Puzzle {
             }
         }
     }
-    
-    debug_log(debug_level, ...args) {
-        if (this.options.debug < debug_level) return;
-        args[0] = " ".repeat(4 * this.search_depth).concat(args[0]);
-        console.log.apply(null, args);
-    }
 
     simplify() {
         while (true) {
@@ -147,8 +163,6 @@ class Puzzle {
                     return;
             }
             else {
-                // And this is where I would put my recursions...
-                // IF I HAD ANY!!!
                 this.debug_log(1, "No more level-" + this.search_depth, "deductions found.");
                 return;
             }
@@ -157,7 +171,7 @@ class Puzzle {
 
     /**
      * Performs the next check in the queue and returns false if it directly
-     * causes a contradiction, 
+     * causes a contradiction, true if not.
      */
     next_check() {
         let check = this.check_queue.shift();
@@ -167,7 +181,7 @@ class Puzzle {
             return true;
         let constraint = check.constraint;
         let var_id = variable.var_id;
-        this.debug_log(3, " Checking variable", var_id, `(${variable.vpos?.x},${variable.vpos?.y})`, "on constraint", constraint.id);
+        this.debug_log(3, " Checking", this.format_var(variable), "on", this.format_con(constraint));
 
         for (let value of values) {
             variable.value = [value];
@@ -178,7 +192,7 @@ class Puzzle {
                 continue;
 
             this.deduct_queue.push({ variable, value, constraint });
-            this.debug_log(2, "  Variable", var_id, `(${variable.vpos?.x},${variable.vpos?.y})`, "with value", value, "fails constraint", constraint.id);
+            this.debug_log(2, " " + this.format_var(variable), "with value", value, "fails", this.format_con(constraint));
             if (values.every(v => ++this.global_stats.total_contradiction_checks && this.deduct_queue.find(d => d.variable == variable && d.value == v))) {
                 this.debug_log(2, "  Contradiction! Aborting solve...");
                 this.status = "contradiction";
@@ -196,13 +210,13 @@ class Puzzle {
         this.deductions_made.push(deduction);
         let variable = deduction.variable;
 
-        this.debug_log(1, "Deduction", deduction.id, ": variable", variable.var_id, `(${variable.vpos?.x},${variable.vpos?.y})`, "cannot have value", deduction.value);
+        this.debug_log(1, "Deduction", deduction.id, ":", this.format_var(variable), "cannot have value", deduction.value);
         variable.value.splice(variable.value.indexOf(deduction.value), 1);
         if (variable.value.length == 1) {
-            this.debug_log(1, "  Variable", variable.var_id, `(${variable.vpos?.x},${variable.vpos?.y})`, "has value", variable.value[0]);
+            this.debug_log(1, "  " + this.format_var(variable), "has value", variable.value[0]);
         } else if (variable.value.length == 0) {
             this.debug_log(1, "  Contradiction! Aborting solve...");
-            this.status = "contradiction";
+            this.status = 'contradiction';
             return false;
         }
 
@@ -229,7 +243,7 @@ class Puzzle {
             let values = variable.value.slice();
             for (let value of values) {
                 let new_partsol = new PartialSolution(this, this.search_depth + 1);
-                this.debug_log(1, '  Setting variable', variable.var_id, `(${variable.vpos?.x},${variable.vpos?.y})`, 'to', value);
+                this.debug_log(1, "   Setting", this.format_var(variable), "to", value);
                 this.variables[variable.var_id].value = [value];
                 for (let v2 of values) if (v2 != value)
                     this.deductions_made.push({ variable, value: v2 });
@@ -237,28 +251,30 @@ class Puzzle {
                     for (let subvariable of constraint.variables)
                         this.check_queue.push({ variable: subvariable, constraint });
                 }
-                this.debug_log(1, '  >>>>>>>>>>>>>>>>');
+                this.debug_log(1, "   >>>>>>>>>>>>>>>>");
                 this.search_depth++;
                 this.simplify();
                 new_partsol.save();
                 this.search_depth--;
-                this.debug_log(1, '  <<<<<<<<<<<<<<<<');
+                this.debug_log(1, "   <<<<<<<<<<<<<<<<");
                 if (this.status == 'contradiction') {
-                    this.debug_log(1, '  Variable', variable.var_id, `(${variable.vpos?.x},${variable.vpos?.y})`, 'with value', value, 'causes a contradiction');
+                    this.debug_log(1, "   " + this.format_var(variable), "with value", value, "causes a contradiction");
                     contradictions.push({ variable, value });
-                    console.log(variable.var_id, value)
                 } else {
-                    this.debug_log(1, '  Variable', variable.var_id, `(${variable.vpos?.x},${variable.vpos?.y})`, 'with value', value, 'leads to', this.deductions_made.length, 'simplifications');
+                    this.debug_log(1, "   " + this.format_var(variable), "with value", value, "leads to", this.deductions_made.length, "simplifications");
                     partsols.push(new_partsol);
                 }
                 base_partsol.restore();
             }
+            if (partsols.length == 0) {
+                // we've found an existing contradiction, end it here
+                return false;
+            }
             let agreement = PartialSolution.agreement(partsols).deductions_made;
-            this.debug_log(1, '  Variable', variable.var_id, `(${variable.vpos?.x},${variable.vpos?.y})`, 'agreement:', agreement.map(x => 'v' + x.variable.var_id + ' => ' + x.value).join('; '));
+            this.debug_log(1, "  " + this.format_var(variable), "agreement:", agreement.map(x => this.format_var(x.variable) + " =/> " + x.value).join("; ") || "none");
             if (agreement.length > 0)
                 all_agreements.push({contradictions, agreement});
         }
-        //this.debug_log(1, 'Level', this.search_depth, 'deductions found:', all_agreements.map(x => 'v' + x.contradictions.variable.var_id + ' => ' + x.value))
         
         all_agreements.sort((a, b) => b.agreement.length - a.agreement.length);
         return all_agreements.flatMap(x => x.contradictions);
