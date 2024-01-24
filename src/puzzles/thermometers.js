@@ -39,11 +39,12 @@ class ThermometersPuzzle extends Puzzle {
     }
 }
 
+module.exports = ThermometersPuzzle;
+
 //let testPuzzle = new ThermometersPuzzle([[{ x: 0, y: 0 }, { x: 0, y: 1 }], [{ x: 1, y: 1 }, { x: 1, y: 0 }]], [1, 1, 1, 1]);
 let puzzleData = require('../test/thermometers/4x4-normal.json');
 let testPuzzle = new ThermometersPuzzle(puzzleData.puzzle.thermometers, puzzleData.puzzle.rowcolsums);
 
-console.log(testPuzzle);
 testPuzzle.solve({ max_depth: 1, debug: 1 });
 for (let row of testPuzzle.grid.cellRows)
-    console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0] == 1 ? "#" : "_").join(" "));
+    console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0] == 1 ? "#" : ".").join(" "));

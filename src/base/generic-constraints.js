@@ -9,5 +9,19 @@ module.exports = {
                     sums.add(prev + value);
         }
         return sums.has(target);
+    },
+    CONTAINS_ALL: function(vars, target) {
+        let sets = new Set([0n]);
+        for (let v of vars) {
+            let oldsets = sets;
+            sets = new Set();
+            for (let value of v.value) {
+                let index = BigInt(target.indexOf(value));
+                for (let prev of oldsets) {
+                    sets.add(prev | 1n << index);
+                }
+            }
+        }
+        return sets.has(2n ** BigInt(target.length) - 1n);
     }
 };

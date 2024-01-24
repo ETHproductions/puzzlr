@@ -134,7 +134,7 @@ class Puzzle {
                     console.log('Depth not supported!');
                     return this;
                 }
-                this.debug_log(1, "Depth-" + (this.search_depth + 1), "search found deductions in", next_depth_queue.length, "variables");
+                this.debug_log(1, "Depth-" + (this.search_depth + 1), "search found", next_depth_queue.length, "deductions");
             }
 
             let deduction;
