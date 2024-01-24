@@ -11,9 +11,7 @@ class SudokuPuzzle extends Puzzle {
             throw new Error("Sudoku subgrid must have same number of cells as rows and columns");
         let size = task.length;
 
-        super(new SquareGrid(size));
-        this.grid.fill();
-        this.grid.finalize();
+        super(SquareGrid.fromSize(size));
 
         let areas = [];
         let values = [];

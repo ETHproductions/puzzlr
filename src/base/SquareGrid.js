@@ -5,6 +5,9 @@ class SquareGrid extends PuzzleGrid {
     /**
      * Creates a new empty square grid with a given width and height, which
      * cannot be changed.
+     * The grid returned will contain no cells and must be filled in manually.
+     * To create a ready-to-use rectangular grid, try static methods
+     * fromSize(), fromCoords(), or fromAreas().
      * @param {number} w width of puzzle
      * @param {number} h height of puzzle
      */
@@ -20,6 +23,18 @@ class SquareGrid extends PuzzleGrid {
             vert: new Array2D(w + 1, h),
             horiz: new Array2D(w, h + 1)
         };
+    }
+
+    /**
+     * Creates a new SquareGrid from a width and height and fills with cells.
+     * @param {number} w width of puzzle
+     * @param {number} h height of puzzle
+     */
+    static fromSize(w, h = w) {
+        let grid = new SquareGrid(w, h);
+        grid.fill();
+        grid.finalize();
+        return grid;
     }
 
     /**
