@@ -40,8 +40,10 @@ class ThermometersPuzzle extends Puzzle {
 }
 
 //let testPuzzle = new ThermometersPuzzle([[{ x: 0, y: 0 }, { x: 0, y: 1 }], [{ x: 1, y: 1 }, { x: 1, y: 0 }]], [1, 1, 1, 1]);
-let testPuzzle = new ThermometersPuzzle([[{x:0,y:0},{x:1,y:0},{x:2,y:0}],[{x:3,y:1},{x:3,y:0}],[{x:0,y:1},{x:1,y:1},{x:2,y:1}],[{x:0,y:2},{x:0,y:3}],[{x:1,y:2},{x:1,y:3}],[{x:2,y:2},{x:3,y:2}],[{x:3,y:3},{x:2,y:3}]], [2,2,1,2,3,2,1,1]);
+let puzzleData = require('../test/thermometers/4x4-normal.json');
+let testPuzzle = new ThermometersPuzzle(puzzleData.puzzle.thermometers, puzzleData.puzzle.rowcolsums);
+
 console.log(testPuzzle);
-testPuzzle.solve({ max_depth: 1, debug: 3 });
+testPuzzle.solve({ max_depth: 1, debug: 1 });
 for (let row of testPuzzle.grid.cellRows)
-    console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0] == 1 ? "X" : "_").join(" "));
+    console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0] == 1 ? "#" : "_").join(" "));
