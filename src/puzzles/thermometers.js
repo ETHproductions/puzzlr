@@ -45,6 +45,7 @@ module.exports = ThermometersPuzzle;
 let puzzleData = require('../test/thermometers/4x4-normal.json');
 let testPuzzle = new ThermometersPuzzle(puzzleData.puzzle.thermometers, puzzleData.puzzle.rowcolsums);
 
-testPuzzle.solve({ max_depth: 1, debug: 1 });
+testPuzzle.solve({ max_depth: 1, debug: 2, mode: 'thorough' });
+console.log('Stats:', testPuzzle.global_stats);
 for (let row of testPuzzle.grid.cellRows)
     console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0] == 1 ? "#" : ".").join(" "));

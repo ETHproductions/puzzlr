@@ -19,9 +19,7 @@ class SudokuPuzzle extends Puzzle {
             areas.push([]);
             values.push(i + 1);
         }
-        console.log(this.grid.cellmap)
         this.grid.cellmap.map((cell, {x, y}) => {
-            console.log(cell.vpos)
             let hint = task[y][x];
             this.addVariable(cell, hint && hint != -1 ? [ parseInt(hint, 36) ] : values.slice());
             areas[(x / width | 0) + height * (y / height | 0)].push(cell);
@@ -35,6 +33,7 @@ module.exports = SudokuPuzzle;
 let puzzleData = require('../test/sudoku/3x3-extreme.json');
 let testPuzzle = new SudokuPuzzle(puzzleData.puzzle.size, puzzleData.puzzle.task);
 
-testPuzzle.solve({ max_depth: 1, debug: 1 });
+testPuzzle.solve({ max_depth: 1, debug: 1, mode: 'fast' });
+console.log('Stats:', testPuzzle.global_stats);
 for (let row of testPuzzle.grid.cellRows)
     console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0].toString(36).toUpperCase()).join(" "));
