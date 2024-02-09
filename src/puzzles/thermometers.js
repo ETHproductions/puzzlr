@@ -3,11 +3,11 @@ const Constraints = require('../base/generic-constraints.js');
 const SquareGrid = require('../base/SquareGrid.js');
 
 class ThermometersPuzzle extends Puzzle {
-    constructor(areas, task) {
-        super(SquareGrid.fromAreas(areas));
-        if (this.grid.width + this.grid.height != task.length)
+    constructor({ thermometers, sums }) {
+        super(SquareGrid.fromAreas(thermometers));
+        if (this.grid.width + this.grid.height != sums.length)
             throw new Error("Task length must equal width of grid plus height of grid");
-        this.areas = areas;
+        this.areas = thermometers;
         this.structures = { thermo: [] };
 
         const THERMO_LENGTH = function([thermo, cell], target) {
@@ -17,7 +17,7 @@ class ThermometersPuzzle extends Puzzle {
                 return true;
             return false;
         };
-        for (let area of areas) {
+        for (let area of thermometers) {
             let thermo = { vars: [] };
             this.addVariable(thermo, [0], false);
             for (let pos of area) {
@@ -34,18 +34,9 @@ class ThermometersPuzzle extends Puzzle {
 
         let i = 0;
         for (let vars of [...this.grid.cellCols, ...this.grid.cellRows]) {
-            this.addConstraint(Constraints.SUM_EQUALS, vars, task[i++]);
+            this.addConstraint(Constraints.SUM_EQUALS, vars, sums[i++]);
         }
     }
 }
 
 module.exports = ThermometersPuzzle;
-
-//let testPuzzle = new ThermometersPuzzle([[{ x: 0, y: 0 }, { x: 0, y: 1 }], [{ x: 1, y: 1 }, { x: 1, y: 0 }]], [1, 1, 1, 1]);
-let puzzleData = require('../test/thermometers/4x4-normal.json');
-let testPuzzle = new ThermometersPuzzle(puzzleData.puzzle.thermometers, puzzleData.puzzle.rowcolsums);
-
-testPuzzle.solve({ max_depth: 1, debug: 2, mode: 'thorough' });
-console.log('Stats:', testPuzzle.global_stats);
-for (let row of testPuzzle.grid.cellRows)
-    console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0] == 1 ? "#" : ".").join(" "));

@@ -3,10 +3,10 @@ const Constraints = require('../base/generic-constraints.js');
 const SquareGrid = require('../base/SquareGrid.js');
 
 class SudokuPuzzle extends Puzzle {
-    constructor(subgridsize, task) {
+    constructor({ subsize, task }) {
         if (task.length != task[0].length)
             throw new Error("Sudoku grid must be square");
-        let { width, height } = subgridsize;
+        let { width, height } = subsize;
         if (width * height != task.length)
             throw new Error("Sudoku subgrid must have same number of cells as rows and columns");
         let size = task.length;
@@ -29,11 +29,3 @@ class SudokuPuzzle extends Puzzle {
 }
 
 module.exports = SudokuPuzzle;
-
-let puzzleData = require('../test/sudoku/3x3-extreme.json');
-let testPuzzle = new SudokuPuzzle(puzzleData.puzzle.size, puzzleData.puzzle.task);
-
-testPuzzle.solve({ max_depth: 1, debug: 1, mode: 'fast' });
-console.log('Stats:', testPuzzle.global_stats);
-for (let row of testPuzzle.grid.cellRows)
-    console.log(row.map(v => v.value.length > 1 ? "?" : v.value[0].toString(36).toUpperCase()).join(" "));

@@ -1,6 +1,11 @@
 {
     "puzzle": {
+        "type": "sudoku",
         "size": {
+            "width": 12,
+            "height": 12
+        },
+        "subsize": {
             "width": 4,
             "height": 3
         },
@@ -18,6 +23,7 @@
             [0,0,"9",0,0,0,0,"2",0,"C","A",0],
             ["A",0,0,"C","B",0,0,"9",0,0,0,"8"]
         ],
+        "puzzleteam_size": "10",
         "puzzleteam_id": "Jan 15, 2024"
     }
 }

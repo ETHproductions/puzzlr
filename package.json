@@ -1,0 +1,22 @@
+{
+  "name": "puzzlr",
+  "version": "0.1.0",
+  "description": "A puzzling toolkit designed around a rudimentary universal solver.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "puzzlr": "./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ETHproductions/puzzlr.git"
+  },
+  "author": "ETHproductions",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ETHproductions/puzzlr/issues"
+  },
+  "homepage": "https://github.com/ETHproductions/puzzlr#readme"
+}
