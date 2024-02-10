@@ -1,17 +1,7 @@
-let type, filename, mode = 'thorough', depth = 1;
+#!/usr/bin/env node
+const fs = require('fs');
 
-if (process.argv.length < 4) return console.log(`
-puzzlr <type> <file> <options>
-
-Types supported: norinori, sudoku, thermometers
-Filename can either be a path to a json file or the name of one of the files
-in puzzlr/src/test/<type>/ (minus the .json)
-Example: puzzlr sudoku 3x3-basic
-
-Options:
-  -m, --mode: 'fast' or 'thorough' (default='thorough')
-  -d, --depth: depth of recursive search
-`);
+let type, filename, mode = 'thorough', max_depth = 1, debug = 0;
 
 for (let i = 2; i < process.argv.length; i++) {
     let arg = process.argv[i];
@@ -23,7 +13,13 @@ for (let i = 2; i < process.argv.length; i++) {
                 break;
             case '-d':
             case '--depth':
-                depth = +process.argv[++i];
+                max_depth = process.argv[++i] | 0;
+                break;
+            case '-l':
+            case '--log':
+                debug = process.argv[++i] | 0;
+                break;
+            case '--help':
                 break;
             default:
                 console.warn('Unsupported option:', arg);
@@ -37,12 +33,37 @@ for (let i = 2; i < process.argv.length; i++) {
             if (arg.includes('/') || arg.includes('.json'))
                 filename = arg;
             else
-                filename = `.\\src\\test\\${ type }\\${ arg }.json`;
+                filename = `${ __dirname }\\src\\test\\${ type }\\${ arg }.json`;
         }
     }
 }
 
 let PuzzleType, puzzleData;
+if (type === undefined) {
+    console.log(`puzzlr <type> <file> <options>\n`);
+
+    let puzzletypes = [];
+    fs.readdirSync(`.\\src\\puzzles`).forEach(file => {
+        if (/\.js$/i.test(file)) puzzletypes.push(file.slice(0, -3));
+    });
+    let output = ['Types supported: '];
+    for (let ptype of puzzletypes) {
+        if (output[output.length - 1].length + ptype.length + 1 > 80)
+            output.push(' '.repeat(17));
+        output[output.length - 1] += ptype + ', ';
+    }
+    console.log(output.join('\n').slice(0, -2));
+    console.log(`Filename can either be a path to a json file or a built-in example.
+Enter 'puzzlr <type>' to see available examples for that puzzle type.
+
+Options:
+    -m, --mode: 'fast' or 'thorough' (default='thorough')
+    -d, --depth: depth of recursive search (default=1)
+    -l, --log: level of detail in debug log (default=0)`);
+
+    return;
+}
+
 try {
     PuzzleType = require(`.\\src\\puzzles\\${type}`);
 } catch(e) {
@@ -50,15 +71,23 @@ try {
     return;
 }
 
+if (filename === undefined) {
+    console.log(`Available ${type} examples:`);
+    fs.readdirSync(`.\\src\\test\\${type}`).forEach(file => {
+        if (/\.json$/i.test(file)) console.log('- ' + file.slice(0, -5));
+    });
+    return;
+}
+
 try {
-    puzzleData = require(filename).puzzle;
+    puzzleData = JSON.parse(fs.readFileSync(filename, 'utf8')).puzzle;
 } catch(e) {
     console.error('Error: Could not find puzzle data at', filename);
     return;
 }
 
 let testPuzzle = new PuzzleType(puzzleData);
-testPuzzle.solve({ max_depth: depth, debug: 2, mode });
+testPuzzle.solve({ max_depth, debug, mode });
 console.log('Stats:', testPuzzle.global_stats);
 
 let format;

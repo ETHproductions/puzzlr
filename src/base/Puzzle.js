@@ -8,22 +8,7 @@
 
 class Puzzle {
     /**
-     * The Puzzle constructor takes a list of variables to be solved, and con-
-     * straints that need to be satisfied. If the puzzle is properly specified,
-     * there will only be one set of variables that satisfies all constraints.
-     * 
-     * Variables need to have the following properties:
-     * - id: sequential integers starting at 0
-     * - value: array of all possible values; will be pruned down to one value
-     * - pos: { x, y } of variable in puzzle
-     * - constraints: array of constraints in which this variable is involved
-     * 
-     * Constraints have a similar list of properties:
-     * - id: sequential integers starting at 0
-     * - check: function that takes in a list of variables and a target value,
-     *     returning false if the constraint cannot be met, true otherwise
-     * - target: target value for the check function
-     * - variables: array of variables which this constraint involves
+     * Takes a grid and begins the process of creating a puzzle.
      */
     constructor(grid) {
         this.grid = grid;
@@ -31,6 +16,14 @@ class Puzzle {
         this.constraints = [];
     }
 
+    /**
+     * Create a variable attached to an element of the grid.
+     * @param {object} ref GridCell, GridVertex, GridEdge, or an object that
+     * represents a structure
+     * @param {(number|string)[]} value array of possible values
+     * @param {boolean} must_be_unique if false, ignores this variable when
+     * checking whether the puzzle is fully solved
+     */
     addVariable(ref, value, must_be_unique = true) {
         ref.value = value;
         ref.var_id = this.variables.length;
@@ -40,6 +33,20 @@ class Puzzle {
         this.variables.push(ref);
     }
 
+    /**
+     * @callback constraintCheck 
+     * @param {(number|string)[][]} values value array for each variable
+     * @param {number|string} target value to be aimed for; exact usage depends
+     * upon check function
+     */
+    /**
+     * Create a constraint on a fixed set of variables.
+     * @param {constraintCheck} check function to check whether an array of
+     * values can meet a given target value 
+     * @param {object[]} variables array of variables on which to apply this
+     * constraint
+     * @param {number|string} target value to pass into the check function
+     */
     addConstraint(check, variables, target) {
         let constraint = { id: this.constraints.length, check, variables, target };
         this.constraints.push(constraint);
@@ -108,8 +115,6 @@ class Puzzle {
         this.initial_partsol.save();
         this.partsol = new PartialSolution(this, 0);
 
-        // Level 0: check whether any possible value for each variable immediat-
-        // ely breaks any of its constraints, and remove the ones that do
         for (let constraint of this.constraints)
             for (let variable of constraint.variables)
                 this.check_queue.push({ variable, constraint, deduct_id: '-1' });
