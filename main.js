@@ -1,4 +1,3 @@
-let puzzleData = null;
 document.getElementById("puzzfile").onchange = (e) => {
     document.getElementById("button-solve").disabled = true;
     let file = e.target.files[0];
@@ -9,7 +8,8 @@ document.getElementById("puzzfile").onchange = (e) => {
     reader.readAsText(file, 'UTF-8');
     reader.onload = e => {
         try {
-            puzzleData = JSON.parse(e.target.result);
+            let puzzleData = JSON.parse(e.target.result);
+            puzzleWorker.postMessage({ command: 'load', data: puzzleData });
             console.log('Data loaded.');
             document.getElementById("solution").innerText = "Ready.";
             document.getElementById("button-solve").disabled = false;
@@ -18,14 +18,21 @@ document.getElementById("puzzfile").onchange = (e) => {
             document.getElementById("solution").innerText = "No JSON data found";
         }
     }
-}
+};
 document.getElementById("button-solve").onclick = (e) => {
     document.getElementById("solution").innerText = "Running...";
-    puzzleWorker.postMessage(puzzleData);
-}
+    puzzleWorker.postMessage({ command: 'solve' });
+};
 
 const puzzleWorker = new Worker("web-solver.js");
 puzzleWorker.onmessage = e => {
     console.log("Message received from child:", e.data);
-    document.getElementById("solution").innerText = e.data;
+    switch (e.data.status) {
+        case 'done':
+            document.getElementById("solution").innerText = e.data.output;
+            break;
+        case 'invalid':
+            document.getElementById("solution").innerText = "Error processing puzzle";
+            break;
+    }
 };
