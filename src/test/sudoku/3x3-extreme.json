@@ -1,13 +1,12 @@
 {
     "puzzle": {
         "type": "sudoku",
-        "size": {
+        "grid": {
+            "type": "square",
             "width": 9,
-            "height": 9
-        },
-        "subsize": {
-            "width": 3,
-            "height": 3
+            "height": 9,
+            "boxwidth": 3,
+            "boxheight": 3
         },
         "task": [
             [0,0,8,2,0,0,0,7,0],

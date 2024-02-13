@@ -1,7 +1,8 @@
 {
     "puzzle": {
         "type": "thermometers",
-        "size": {
+        "grid": {
+            "type": "square",
             "width": 4,
             "height": 4
         },

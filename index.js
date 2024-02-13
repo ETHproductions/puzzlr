@@ -1,5 +1,10 @@
 #!/usr/bin/env node
-const fs = require('fs');
+import { readdirSync, readFileSync } from 'fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let type, filename, mode = 'thorough', max_depth = 1, debug = 0;
 
@@ -43,7 +48,7 @@ if (type === undefined) {
     console.log(`puzzlr <type> <file> <options>\n`);
 
     let puzzletypes = [];
-    fs.readdirSync(`.\\src\\puzzles`).forEach(file => {
+    readdirSync(__dirname + `\\src\\puzzles`).forEach(file => {
         if (/\.js$/i.test(file)) puzzletypes.push(file.slice(0, -3));
     });
     let output = ['Types supported: '];
@@ -61,29 +66,29 @@ Options:
     -d, --depth: depth of recursive search (default=1)
     -l, --log: level of detail in debug log (default=0)`);
 
-    return;
+    process.exit(0);
 }
 
 try {
-    PuzzleType = require(`.\\src\\puzzles\\${type}`);
+    PuzzleType = (await import('file:\\\\' + __dirname + `\\src\\puzzles\\${type}.js`)).default;
 } catch(e) {
     console.error('Error: Invalid puzzle type:', type);
-    return;
+    process.exit(1);
 }
 
 if (filename === undefined) {
     console.log(`Available ${type} examples:`);
-    fs.readdirSync(`.\\src\\test\\${type}`).forEach(file => {
+    readdirSync(__dirname + `\\src\\test\\${type}`).forEach(file => {
         if (/\.json$/i.test(file)) console.log('- ' + file.slice(0, -5));
     });
-    return;
+    process.exit(0);
 }
 
 try {
-    puzzleData = JSON.parse(fs.readFileSync(filename, 'utf8')).puzzle;
+    puzzleData = JSON.parse(readFileSync(filename, 'utf8')).puzzle;
 } catch(e) {
     console.error('Error: Could not find puzzle data at', filename);
-    return;
+    process.exit(1);
 }
 
 let testPuzzle = new PuzzleType(puzzleData);

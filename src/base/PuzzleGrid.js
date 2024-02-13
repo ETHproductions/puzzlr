@@ -1,5 +1,3 @@
-const Array2D = require('./Array2D.js');
-
 /**
  * How to make a custom puzzle grid
  * 
@@ -474,4 +472,4 @@ class GridEdge {
     }
 }
 
-module.exports = PuzzleGrid;
+export default PuzzleGrid;

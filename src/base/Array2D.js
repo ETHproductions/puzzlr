@@ -183,4 +183,4 @@ class Array2D {
     }
 }
 
-module.exports = Array2D;
+export default Array2D;

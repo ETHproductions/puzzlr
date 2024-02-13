@@ -1,7 +1,8 @@
 {
     "puzzle": {
         "type": "norinori",
-        "size": {
+        "grid": {
+            "type": "square",
             "width": 6,
             "height": 6
         },

@@ -1,6 +1,6 @@
-const Puzzle = require('../base/Puzzle.js');
-const Constraints = require('../base/generic-constraints.js');
-const SquareGrid = require('../base/SquareGrid.js');
+import Puzzle from '../base/Puzzle.js';
+import { SUM_EQUALS } from '../base/generic-constraints.js';
+import SquareGrid from '../base/SquareGrid.js';
 
 class ThermometersPuzzle extends Puzzle {
     constructor({ thermometers, sums }) {
@@ -34,9 +34,9 @@ class ThermometersPuzzle extends Puzzle {
 
         let i = 0;
         for (let vars of [...this.grid.cellCols, ...this.grid.cellRows]) {
-            this.addConstraint(Constraints.SUM_EQUALS, vars, sums[i++]);
+            this.addConstraint(SUM_EQUALS, vars, sums[i++]);
         }
     }
 }
 
-module.exports = ThermometersPuzzle;
+export default ThermometersPuzzle;

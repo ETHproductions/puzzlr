@@ -9,7 +9,7 @@ class Constraint {
 }
 
 // constraint that only involves a fixed set of variables
-class FixedConstraint extends Constraint {
+export class FixedConstraint extends Constraint {
     /**
      * Create a FixedConstraint out of a check function.
      * The function should take params:
@@ -85,7 +85,7 @@ class FixedConstraint extends Constraint {
  * - Galaxies: each galaxy must be rotationally symmetric
  * - Battleships: there must be exactly n 1-ships, m 2-ships, p 3-ships, etc.
  */
-class FuzzyConstraint {
+export class FuzzyConstraint {
     /**
      * Create a FuzzyConstraint out of a check function.
      * The function should take params:
@@ -96,5 +96,3 @@ class FuzzyConstraint {
         super(puzzle, check);
     }
 }
-
-module.exports = { FixedConstraint, FuzzyConstraint };

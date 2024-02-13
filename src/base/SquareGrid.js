@@ -1,5 +1,5 @@
-const PuzzleGrid = require('./PuzzleGrid.js');
-const Array2D = require('./Array2D.js');
+import PuzzleGrid from './PuzzleGrid.js';
+import Array2D from './Array2D.js';
 
 class SquareGrid extends PuzzleGrid {
     /**
@@ -197,4 +197,4 @@ class SquareGrid extends PuzzleGrid {
     }
 }
 
-module.exports = SquareGrid;
+export default SquareGrid;
