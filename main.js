@@ -29,7 +29,7 @@ document.getElementById("button-solve").onclick = (e) => {
 
 const puzzleWorker = new Worker("web-solver.js");
 puzzleWorker.onmessage = e => {
-    //console.log("Message received from child:", e.data);
+    // console.log("Message received from child:", e.data);
     switch (e.data.status) {
         case 'done':
         case 'update':
