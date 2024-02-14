@@ -19,6 +19,9 @@ document.getElementById("puzzfile").onchange = (e) => {
         }
     }
 };
+document.getElementById("solvemode").onclick = (e) => {
+    puzzleWorker.postMessage({ command: 'changemode', data: e.target.value });
+};
 document.getElementById("button-solve").onclick = (e) => {
     document.getElementById("solution").innerText = "Running...";
     puzzleWorker.postMessage({ command: 'solve' });
@@ -26,9 +29,10 @@ document.getElementById("button-solve").onclick = (e) => {
 
 const puzzleWorker = new Worker("web-solver.js");
 puzzleWorker.onmessage = e => {
-    console.log("Message received from child:", e.data);
+    //console.log("Message received from child:", e.data);
     switch (e.data.status) {
         case 'done':
+        case 'update':
             document.getElementById("solution").innerText = e.data.output;
             break;
         case 'invalid':

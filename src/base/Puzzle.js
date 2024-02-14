@@ -85,7 +85,7 @@ class Puzzle {
      *   - 'thorough': check every variable before making the next deduction
      *   - 'fast': make the first deduction found
      */
-    solve(options) {
+    initiate_solve(options) {
         if (typeof options.max_depth != 'number')
             throw new Error('Puzzle.solve(): no or invalid max_depth parameter provided');
         if (!['fast', 'thorough'].includes(options.mode))
@@ -118,7 +118,10 @@ class Puzzle {
         for (let constraint of this.constraints)
             for (let variable of constraint.variables)
                 this.check_queue.push({ variable, constraint, deduct_id: '-1' });
+    }
 
+    solve(options) {
+        if (options) this.initiate_solve(options);
         console.log('Running...');
         while (true) {
             this.simplify();
@@ -190,6 +193,7 @@ class Puzzle {
             if (values.every(v => ++this.global_stats.total_contradiction_checks && this.deduct_queue.find(d => d.variable == variable && d.value == v))) {
                 this.debug_log(2, "  Contradiction! Aborting solve...");
                 this.status = "contradiction";
+                if (typeof this.options.on_contradict == 'function' && this.current_depth == 0) this.options.on_contradict(variable);
                 return false;
             }
         }
@@ -216,11 +220,14 @@ class Puzzle {
 
         this.debug_log(1, "Deduction", deduction.id, ":", this.format_var(variable), "cannot have value", deduction.value);
         variable.value.splice(variable.value.indexOf(deduction.value), 1);
+        if (typeof this.options.on_deduct == 'function' && this.current_depth == 0) this.options.on_deduct(deduction);
         if (variable.value.length == 1) {
             this.debug_log(1, "  " + this.format_var(variable), "has value", variable.value[0]);
+            if (typeof this.options.on_value == 'function' && this.current_depth == 0) this.options.on_value(variable);
         } else if (variable.value.length == 0) {
             this.debug_log(1, "  Contradiction! Aborting solve...");
             this.status = 'contradiction';
+            if (typeof this.options.on_contradict == 'function' && this.current_depth == 0) this.options.on_contradict(variable);
             return false;
         }
 
