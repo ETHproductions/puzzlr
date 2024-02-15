@@ -96,15 +96,18 @@ class Puzzle {
         console.log('Solve initiated in', options.mode, 'mode');
         this.global_stats = {
             total_constraint_checks: 0,
-            total_level_checks: [],
             total_contradiction_checks: 0,
             total_context_switches: 0,
+            total_deduction_checks: 0,
             invalid_deductions: 0,
+            measured_time: 0,
         };
+        this.start_time = new Date;
         this.current_deduct_id = [];
         this.check_queue = [];
         this.deduct_queue = [];
         this.deductions_made = [];
+        this.prior_deductions = [];
         this.assumptions = [];
         this.status = 'partial';
         this.current_depth = 0;
@@ -128,7 +131,8 @@ class Puzzle {
             if (this.check_if_done())
                 return this;
             this.prepare_next_depth();
-            if (!this.next_depth_fast()) {
+            let success = this.options.mode == 'fast' ? this.next_depth_fast() : this.next_depth_thorough();
+            if (!success) {
                 this.status = 'unsolvable';
                 console.log('Depth not supported!');
                 return this;
@@ -199,6 +203,7 @@ class Puzzle {
         }
 
         variable.value = values;
+        if (typeof this.options.on_check == 'function' && this.current_depth == 0) this.options.on_check(check);
         return true;
     }
 
@@ -243,12 +248,26 @@ class Puzzle {
     }
 
     prepare_next_depth() {
+        let base_partsol = this.current_partsol;
         if (this.child_partsols.length > 0) {
-            // Eventually the goal is to merge changes to the parent partsol
-            // into the children but for now we just ignore
+            let new_child_partsols = [];
+            for (let new_partsol of this.child_partsols) {
+                if (new_partsol.variable.value.length == 1)
+                    continue;
+                if (this.deductions_made.findIndex(d => d.variable == new_partsol.variable && d.value == new_partsol.value) != -1)
+                    continue;
+                new_partsol.restore();
+                //if (new_partsol.done)
+                for (let deduct of base_partsol.deductions_made.slice(base_partsol.last_deduction_update))
+                    this.try_deduction(deduct);
+                base_partsol.restore();
+                new_child_partsols.push(new_partsol);
+            }
+            this.debug_log(1, "Culled", this.child_partsols.length - new_child_partsols.length, "partsols,", new_child_partsols.length, "remaining");
+            this.child_partsols = new_child_partsols;
+            base_partsol.last_deduction_update = base_partsol.deductions_made.length;
             return;
         }
-        let base_partsol = this.current_partsol;
 
         for (let variable of this.variables) if (variable.value.length > 1) {
             let values = variable.value.slice();
@@ -258,9 +277,10 @@ class Puzzle {
                 this.child_partsols = [];
                 this.variables[variable.var_id].value = [value];
                 this.assumptions.push({ variable, value });
+                this.prior_deductions = this.prior_deductions.concat(this.deductions_made);
                 this.deductions_made = [];
                 for (let v2 of values) if (v2 != value)
-                    this.deductions_made.push({ variable, value: v2 });
+                    this.prior_deductions.push({ variable, value: v2 });
                 for (let constraint of this.variables[variable.var_id].constraints) {
                     for (let subvariable of constraint.variables)
                         this.check_queue.push({ variable: subvariable, constraint });
@@ -269,6 +289,7 @@ class Puzzle {
                 this.child_partsols.push(new_partsol);
             }
         }
+        base_partsol.last_deduction_update = 0;
     }
 
     /**
@@ -282,8 +303,8 @@ class Puzzle {
      *   deductions (returns false)
      */
     next_depth_fast() {
-        // TODO: flesh out thorough mode
         let base_partsol = this.current_partsol;
+        let i = 0;
         while (this.child_partsols.some(ps => !ps.done)) {
             let new_partsol = this.child_partsols.shift();
             if (new_partsol.done) {
@@ -292,50 +313,126 @@ class Puzzle {
             }
             new_partsol.restore();
 
-            if ((this.options.mode != 'thorough' || this.check_queue.length == 0) && this.deduct_queue.length > 0) {
+            if (this.deduct_queue.length > 0) {
                 if (!this.next_deduct()) {
                     // contradiction, discard this child and add to the deduct queue
                     base_partsol.restore();
-                    this.deduct_queue.push({ variable: new_partsol.variable, value: new_partsol.value });
-                    return true;
+                    if (this.try_deduction(new_partsol)) {
+                        this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
+                        return true;
+                    }
+                    else
+                        continue;
                 }
-                let new_deduction = new_partsol.deductions_made.slice(-1)[0];
+                base_partsol.restore();
+
+                /*let new_deduction = new_partsol.deductions_made.slice(-1)[0];
                 let agreement_found = true;
                 for (let child of base_partsol.child_partsols.filter(ps => ps.variable == new_partsol.variable))
                     if (child.deductions_made.findIndex(d => d.variable == new_deduction.variable && d.value == new_deduction.value) == -1)
                         agreement_found = false;
                 if (agreement_found) {
-                    this.debug_log(1, 'Agreement found:', this.format_var(new_deduction.variable), new_deduction.value)
-                    if (base_partsol.deduct_queue.findIndex(d => d.variable == new_deduction.variable && d.value == new_deduction.value) == -1)
-                        base_partsol.deduct_queue.push({ variable: new_deduction.variable, value: new_deduction.value });
-                    else
-                        this.debug_log(1, 'Deduction already exists');
+                    if (this.try_deduction(new_deduction)) {
+                        this.debug_log(1, 'Agreement found:', this.format_var(new_deduction.variable), new_deduction.value)
+                        return true;
+                    }
                     // TODO: this only catches agreements when the last remaining partsol makes the same deduction;
                     //   need to also consider agreements that occur when the last remaining partsol contradicts
-                    
-                }
+                }*/
             }
-            else if ((this.options.mode != 'fast' || this.deduct_queue.length == 0) && this.check_queue.length > 0) {
+            else if (this.check_queue.length > 0) {
                 if (!this.next_check()) {
                     // contradiction, discard this child and add to the deduct queue
                     base_partsol.restore();
-                    this.deduct_queue.push({ variable: new_partsol.variable, value: new_partsol.value });
-                    return true;
+                    if (this.try_deduction(new_partsol)) {
+                        this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
+                        return true;
+                    }
+                    else
+                        continue;
                 }
+                base_partsol.restore();
             }
             else {
                 this.debug_log(1, "Done with", this.format_var(new_partsol.variable), "=>", new_partsol.value)
                 new_partsol.done = true;
+                base_partsol.restore();
             }
-            base_partsol.restore();
 
-            if (this.options.mode == 'thorough')
-                this.child_partsols.unshift(new_partsol);
-            else
-                this.child_partsols.push(new_partsol);
+            this.child_partsols.push(new_partsol);
         }
         this.debug_log(1, 'Finished depth-' + (this.current_depth + 1), 'search')
         return false;
+    }
+    /**
+     * Performs checks and deductions on each child partsol until done. Returns
+     * true if any contradictions or agreements are found, false otherwise.
+     */
+    next_depth_thorough() {
+        let base_partsol = this.current_partsol, new_partsol;
+        let var_partsols = [];
+        let success = false;
+        while (true) {
+            if (this.current_partsol == base_partsol) {
+                new_partsol = this.child_partsols.shift();
+                if (new_partsol.done) {
+                    this.child_partsols.unshift(new_partsol);
+                    break;
+                }
+                new_partsol.restore();
+            }
+
+            if (this.check_queue.length > 0) {
+                if (!this.next_check()) {
+                    // contradiction, discard this child and add to the deduct queue
+                    base_partsol.restore();
+                    if (this.try_deduction(new_partsol)) {
+                        this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
+                        success = true;
+                    }
+                }
+            }
+            else if (this.deduct_queue.length > 0) {
+                if (!this.next_deduct()) {
+                    // contradiction, discard this child and add to the deduct queue
+                    base_partsol.restore();
+                    if (this.try_deduction(new_partsol)) {
+                        this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
+                        success = true;
+                    }
+                }
+            }
+            else {
+                this.debug_log(1, "Done with", this.format_var(new_partsol.variable), "=>", new_partsol.value);
+                new_partsol.done = true;
+                base_partsol.restore();
+                var_partsols.push(new_partsol);
+                if (this.child_partsols[0].variable != new_partsol.variable) {
+                    // time to do an agreement check!
+                    this.child_partsols.push(...var_partsols);
+                    var_partsols = [];
+                }
+            }
+        }
+        this.debug_log(1, 'Finished depth-' + (this.current_depth + 1), 'search')
+        return success;
+    }
+
+    /**
+     * Attempts to apply a deduction; fails if the deduction already exists.
+     * @param {{ variable: object, value: number|string}} deduction 
+     * @returns true if deduction succeeds, false otherwise
+     */
+    try_deduction(deduction) {
+        this.global_stats.total_deduction_checks++;
+        if (this.deduct_queue.concat(this.deductions_made, this.prior_deductions).findIndex(d => d.variable == deduction.variable && d.value == deduction.value) == -1) {
+            this.deduct_queue.push({ variable: deduction.variable, value: deduction.value });
+            this.current_partsol.done = false;
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     check_if_done() {
@@ -344,7 +441,7 @@ class Puzzle {
             return true;
         }
         if (this.variables.every(v => v.value.length == 1)) {
-            console.log('Puzzle solved');
+            console.log('Puzzle solved in', (new Date - this.start_time)/1000, 'seconds');
             this.status = 'solved';
             return true;
         }
@@ -367,7 +464,7 @@ class PartialSolution {
         this.save();
     }
 
-    static #propsToSave = ['check_queue', 'deduct_queue', 'deductions_made', 'child_partsols', 'status', 'assumptions'];
+    static #propsToSave = ['check_queue', 'deduct_queue', 'deductions_made', 'prior_deductions', 'child_partsols', 'status', 'assumptions'];
     save() {
         for (let prop of PartialSolution.#propsToSave)
             this[prop] = this.puzzle[prop].slice();
@@ -377,6 +474,7 @@ class PartialSolution {
     }
 
     restore(save = true) {
+        let time1 = process.hrtime();
         if (save)
             this.puzzle.current_partsol.save();
 
@@ -387,6 +485,9 @@ class PartialSolution {
             this.puzzle.variables[i].value = this.values[i].slice();
         this.puzzle.current_depth = this.level;
         this.puzzle.global_stats.total_context_switches++;
+        
+        let time2 = process.hrtime();
+        this.puzzle.global_stats.measured_time += (time2[1] - time1[1] + (time2[0] - time1[0])*1e9);
     }
 
     clone() {

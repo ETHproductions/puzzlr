@@ -43,15 +43,17 @@ function runPuzzle() {
         return;
     }
     let puzz = new puzzleType(puzzleData);
-    let last_update = 0;
-    options.on_value = (v) => {
+    puzz.initiate_solve(options);
+    let last_update = 0, check_len = 1;
+    options.on_check = (v) => {
         if (new Date - last_update < 17) return;
         last_update = new Date;
-        let output = "Running...\n" + formatPuzzle(puzz);
+        check_len = Math.max(check_len, ("" + puzz.check_queue.length).length);
+        let output = "Running... (" + ("" + puzz.check_queue.length).padStart(check_len, "\xA0") + " checks / " + puzz.deduct_queue.length + " deducts / " + puzz.child_partsols.filter(ps => !ps.done).length + " ps)\n" + formatPuzzle(puzz);
         postMessage({ status: 'update', output });
     };
-    options.on_value();
-    puzz.solve(options);
+    options.on_check();
+    puzz.solve();
     console.log(puzz);
     let output = puzz.status == 'solved' ? "Solved!\n" : puzz.status == 'contradiction' ? "Contradiction found.\n" : "Couldn't solve...\n";
     output += formatPuzzle(puzz);
