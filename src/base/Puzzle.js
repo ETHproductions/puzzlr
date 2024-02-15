@@ -107,7 +107,7 @@ class Puzzle {
         this.current_depth = 0;
         this.current_max_depth = 0;
 
-        this.ps = new PartialSolution(this);
+        this.base_partsol = this.ps = new PartialSolution(this);
 
         for (let constraint of this.constraints)
             for (let variable of constraint.variables)
@@ -453,7 +453,6 @@ class PartialSolution {
     }
 
     restore(save = true) {
-        let time1 = process.hrtime();
         if (save)
             this.puzzle.ps.save();
 
@@ -461,9 +460,6 @@ class PartialSolution {
         for (let i = 0; i < this.values.length; i++)
             this.puzzle.variables[i].value = this.values[i];
         this.puzzle.global_stats.total_context_switches++;
-        
-        let time2 = process.hrtime();
-        this.puzzle.global_stats.measured_time += (time2[1] - time1[1] + (time2[0] - time1[0])*1e9);
     }
 
     /**

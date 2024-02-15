@@ -48,14 +48,14 @@ function runPuzzle() {
     options.on_check = (v) => {
         if (new Date - last_update < 17) return;
         last_update = new Date;
-        check_len = Math.max(check_len, ("" + puzz.check_queue.length).length);
-        let output = "Running... (" + ("" + puzz.check_queue.length).padStart(check_len, "\xA0") + " checks / " + puzz.deduct_queue.length + " deducts / " + puzz.child_partsols.filter(ps => !ps.done).length + " ps)\n" + formatPuzzle(puzz);
+        check_len = Math.max(check_len, ("" + puzz.base_partsol.check_queue.length).length);
+        let output = "Running... (" + ("" + puzz.base_partsol.check_queue.length).padStart(check_len, "\xA0") + " checks / " + puzz.base_partsol.deduct_queue.length + " deducts / " + puzz.base_partsol.child_partsols.filter(ps => !ps.done).length + " ps)\n" + formatPuzzle(puzz);
         postMessage({ status: 'update', output });
     };
     options.on_check();
     puzz.solve();
     console.log(puzz);
-    let output = puzz.status == 'solved' ? "Solved!\n" : puzz.status == 'contradiction' ? "Contradiction found.\n" : "Couldn't solve...\n";
+    let output = puzz.base_partsol.status == 'solved' ? "Solved!\n" : puzz.base_partsol.status == 'contradiction' ? "Contradiction found.\n" : "Couldn't solve...\n";
     output += formatPuzzle(puzz);
     postMessage({ status: 'done', output });
 }
