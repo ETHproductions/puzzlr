@@ -58,7 +58,7 @@ class Puzzle {
     }
     
     debug_log(debug_level, ...args) {
-        if (this.options.debug < debug_level + (this.current_depth > 0)) return;
+        if (this.options.debug < debug_level + (this.ps.depth > 0)) return;
         args[0] = this.ps.assumptions.map(x => (x.variable.vpos ? 'V' : 'S') + x.variable.var_id + "=" + x.value).join(";") + " " + args[0];
         console.log.apply(null, args);
     }
@@ -122,7 +122,7 @@ class Puzzle {
             if (this.check_if_done())
                 return this;
             this.prepare_next_depth();
-            let success = this.options.mode == 'fast' ? this.next_depth_fast() : this.next_depth_thorough();
+            let success = this.next_depth();
             if (!success) {
                 this.ps.status = 'unsolvable';
                 console.log('Depth not supported!');
@@ -247,9 +247,6 @@ class Puzzle {
                     continue;
                 if (this.ps.deductions_made.findIndex(d => d.variable == new_partsol.variable && d.value == new_partsol.value) != -1)
                     continue;
-                //if (new_partsol.done)
-                for (let deduct of base_partsol.deductions_made.slice(base_partsol.last_deduction_update))
-                    new_partsol.try_deduction(deduct);
                 new_child_partsols.push(new_partsol);
             }
             this.debug_log(1, "Culled", this.ps.child_partsols.length - new_child_partsols.length, "partsols,", new_child_partsols.length, "remaining");
@@ -276,88 +273,21 @@ class Puzzle {
     }
 
     /**
-     * Runs through child partsols, performing one deduction or check at a time
-     * until one of these situations occurs:
-     * - a contradiction occurs in a child, leading to an immediate deduction
-     *   in the parent (returns true)
-     * - an agreement occurs between all children with the same variable, again
-     *   leading to a deduction in the parent (returns true)
-     * - all children have completed, contradicted, or run out of checks and
-     *   deductions (returns false)
-     */
-    next_depth_fast() {
-        let base_partsol = this.ps;
-        let i = 0;
-        while (this.ps.child_partsols.some(ps => !ps.done)) {
-            let new_partsol = this.ps.child_partsols.shift();
-            if (new_partsol.done) {
-                this.ps.child_partsols.push(new_partsol);
-                continue;
-            }
-            new_partsol.restore();
-
-            if (this.ps.deduct_queue.length > 0) {
-                if (!this.next_deduct()) {
-                    // contradiction, discard this child and add to the deduct queue
-                    base_partsol.restore();
-                    if (base_partsol.try_deduction(new_partsol)) {
-                        this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
-                        return true;
-                    }
-                    else
-                        continue;
-                }
-                base_partsol.restore();
-
-                /*let new_deduction = new_partsol.deductions_made.slice(-1)[0];
-                let agreement_found = true;
-                for (let child of base_partsol.child_partsols.filter(ps => ps.variable == new_partsol.variable))
-                    if (child.deductions_made.findIndex(d => d.variable == new_deduction.variable && d.value == new_deduction.value) == -1)
-                        agreement_found = false;
-                if (agreement_found) {
-                    if (base_partsol.try_deduction(new_deduction)) {
-                        this.debug_log(1, 'Agreement found:', this.format_var(new_deduction.variable), new_deduction.value)
-                        return true;
-                    }
-                    // TODO: this only catches agreements when the last remaining partsol makes the same deduction;
-                    //   need to also consider agreements that occur when the last remaining partsol contradicts
-                }*/
-            }
-            else if (this.ps.check_queue.length > 0) {
-                if (!this.next_check()) {
-                    // contradiction, discard this child and add to the deduct queue
-                    base_partsol.restore();
-                    if (base_partsol.try_deduction(new_partsol)) {
-                        this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
-                        return true;
-                    }
-                    else
-                        continue;
-                }
-                base_partsol.restore();
-            }
-            else {
-                this.debug_log(1, "Done with", this.format_var(new_partsol.variable), "=>", new_partsol.value)
-                new_partsol.done = true;
-                base_partsol.restore();
-            }
-
-            this.ps.child_partsols.push(new_partsol);
-        }
-        this.debug_log(1, 'Finished depth-' + (this.current_depth + 1), 'search')
-        return false;
-    }
-    /**
      * Performs checks and deductions on each child partsol until done. Returns
-     * true if any contradictions or agreements are found, false otherwise.
+     * true if any contradictions and/or agreements are found, false otherwise.
+     * In fast mode, returns as soon as an agreement is found in one variable.
      */
-    next_depth_thorough() {
+    next_depth() {
         let base_partsol = this.ps, new_partsol;
         let var_partsols = [];
         let success = false;
         while (true) {
             if (this.ps == base_partsol) {
                 new_partsol = this.ps.child_partsols.shift();
+                while (new_partsol.last_base_update < base_partsol.deductions_made.length) {
+                    if (new_partsol.try_deduction(base_partsol.deductions_made[new_partsol.last_base_update++]))
+                        new_partsol.done = false;
+                }
                 if (new_partsol.done) {
                     this.ps.child_partsols.unshift(new_partsol);
                     break;
@@ -365,7 +295,7 @@ class Puzzle {
                 new_partsol.restore();
             }
 
-            if (this.ps.check_queue.length > 0) {
+            if ((this.options.mode == 'thorough' || this.ps.deduct_queue.length == 0) && this.ps.check_queue.length > 0) {
                 if (!this.next_check()) {
                     // contradiction, discard this child and add to the deduct queue
                     base_partsol.restore();
@@ -375,7 +305,7 @@ class Puzzle {
                     }
                 }
             }
-            else if (this.ps.deduct_queue.length > 0) {
+            else if ((this.options.mode == 'fast' || this.ps.check_queue.length == 0) && this.ps.deduct_queue.length > 0) {
                 if (!this.next_deduct()) {
                     // contradiction, discard this child and add to the deduct queue
                     base_partsol.restore();
@@ -391,13 +321,19 @@ class Puzzle {
                 base_partsol.restore();
                 var_partsols.push(new_partsol);
                 if (this.ps.child_partsols[0].variable != new_partsol.variable) {
-                    // time to do an agreement check!
+                    // agreement check
+                    for (let { variable, value } of PartialSolution.agreement(var_partsols).deductions_made)
+                        if (this.ps.try_deduction({ variable, value }))
+                            this.debug_log(2, 'Agreement found:', this.format_var(variable), '=/>', value);
+                    
                     this.ps.child_partsols.push(...var_partsols);
                     var_partsols = [];
+                    if (success && this.options.mode == 'fast')
+                        return true;
                 }
             }
         }
-        this.debug_log(1, 'Finished depth-' + (this.current_depth + 1), 'search')
+        this.debug_log(1, 'Finished depth-' + (this.current_depth + 1), 'search');
         return success;
     }
 
@@ -438,6 +374,7 @@ class PartialSolution {
         this.deduct_queue = [];
         this.deductions_made = [];
         this.prior_deductions = puzzle.ps ? puzzle.ps.prior_deductions.concat(puzzle.ps.deductions_made) : [];
+        this.last_base_update = this.prior_deductions.length;
         this.assumptions = puzzle.ps ? puzzle.ps.assumptions.concat({ variable, value }) : [];
         this.child_partsols = [];
 
@@ -479,14 +416,24 @@ class PartialSolution {
         }
     }
 
+    /**
+     * Takes a group of PartialSolutions and finds the deductions all have in
+     * common.
+     * If only one input is given, returns it verbatim; otherwise creates a new
+     * PartialSolution with the correct .values and .deductions_made.
+     * @param  {...PartialSolution|PartialSolution[]} partsols 
+     * @returns PartialSolution with deductions agreed upon by all inputs
+     */
     static agreement(...partsols) {
         if (partsols.length == 1 && partsols[0] instanceof Array)
             partsols = partsols[0];
         if (partsols.length == 0)
             throw new Error("PartialSolution.agreement must be at least one partial solution");
+        if (partsols.length == 1)
+            return partsols[0];
 
         let init = partsols[0];
-        let result = new PartialSolution(init.puzzle);
+        let result = new PartialSolution(init.parent);
         result.deductions_made = init.deductions_made.map(d => ({ variable: d.variable, value: d.value }));
         result.values = init.values.map(v => v.slice());
         for (let partsol of partsols.slice(1))
