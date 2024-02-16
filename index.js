@@ -97,11 +97,20 @@ console.log('Stats:', testPuzzle.global_stats);
 
 let format;
 switch (type) {
+    case 'dominosa':
+        format = c => {
+            for (let i = 0; i < 4; i++) {
+                if (c.edges[i].value == 1)
+                    return "^>v<"[i];
+            }
+            return "?";
+        };
+        break;
     case 'sudoku':
-        format = v => v.value.length > 1 ? "?" : v.value[0].toString(36).toUpperCase();
+        format = c => c.value.length > 1 ? "?" : c.value[0].toString(36).toUpperCase();
         break;
     default:
-        format = v => v.value.length > 1 ? "?" : v.value[0] == 1 ? "#" : "."; 
+        format = c => c.value.length > 1 ? "?" : c.value[0] == 1 ? "#" : "."; 
 }
 for (let row of testPuzzle.grid.cellRows)
     console.log(row.map(format).join(" "));

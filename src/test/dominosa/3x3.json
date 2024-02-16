@@ -1,0 +1,19 @@
+{
+    "puzzle": {
+        "type": "dominosa",
+        "grid": {
+            "type": "square",
+            "width": 5,
+            "height": 4
+        },
+        "task": [
+            [0, 0, 0, 0, 1],
+            [0, 1, 3, 2, 1],
+            [2, 3, 2, 3, 1],
+            [3, 2, 2, 3, 1]
+        ],
+        "puzzleteam_size": "0",
+        "puzzleteam_id": "3,768,564"
+    }
+}
+
