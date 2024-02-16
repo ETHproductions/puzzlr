@@ -70,7 +70,7 @@ class Puzzle {
     }
 
     format_con(constraint) {
-        return `C${ constraint.id } #${ constraint.check.name }`;
+        return `C${ constraint.id } #${ constraint.check.name } (${ constraint.variables.slice(0, 5).map(v => (v.vpos ? 'V' : 'S') + v.var_id ).join(', ') + (constraint.variables.length > 5 ? ', ...' : '') })`;
     }
 
     /**

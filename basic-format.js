@@ -6,6 +6,7 @@ export default function formatPuzzle(puzz) {
     let format;
     switch (puzz.type) {
         case 'dominosa':
+        case 'stitches':
             format = c => {
                 let dir = -1;
                 for (let i = 0; i < 4; i++) {

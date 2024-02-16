@@ -160,6 +160,7 @@ class SquareGrid extends PuzzleGrid {
                 if (this.lastCell != null) {
                     this.cellmap.set2D(x - 1, y - 1, this.lastCell);
                     this.lastCell.vpos = { x: x - 1, y: y - 1 };
+                    this.lastCell.area_id = this.areamap.get2D(x - 1, y - 1);
                 }
             }
 
