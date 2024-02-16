@@ -3,6 +3,7 @@ import { SUM_EQUALS } from '../base/generic-constraints.js';
 import SquareGrid from '../base/SquareGrid.js';
 
 class NorinoriPuzzle extends Puzzle {
+    get type() { return 'norinori'; }
     constructor({ areas }) {
         super(SquareGrid.fromAreas(areas));
         this.areas = areas;

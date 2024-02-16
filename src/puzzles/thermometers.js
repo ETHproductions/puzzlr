@@ -3,6 +3,7 @@ import { SUM_EQUALS } from '../base/generic-constraints.js';
 import SquareGrid from '../base/SquareGrid.js';
 
 class ThermometersPuzzle extends Puzzle {
+    get type() { return 'thermometers'; }
     constructor({ thermometers, sums }) {
         super(SquareGrid.fromAreas(thermometers));
         if (this.grid.width + this.grid.height != sums.length)

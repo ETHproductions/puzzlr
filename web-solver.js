@@ -1,3 +1,6 @@
+let formatPuzzle;
+import(`./basic-format.js`).then(data => formatPuzzle = data.default);
+
 let puzzleTypeCache = {};
 let puzzleData = null;
 let puzzleType = null;
@@ -58,25 +61,4 @@ function runPuzzle() {
     let output = puzz.base_partsol.status == 'solved' ? "Solved!\n" : puzz.base_partsol.status == 'contradiction' ? "Contradiction found.\n" : "Couldn't solve...\n";
     output += formatPuzzle(puzz);
     postMessage({ status: 'done', output });
-}
-
-function formatPuzzle(puzz) {
-    let format;
-    switch (puzzleData.type) {
-        case 'dominosa':
-            format = c => {
-                for (let i = 0; i < 4; i++) {
-                    if (c.edges[i].value == 1)
-                        return "^>v<"[i];
-                }
-                return "?";
-            };
-            break;
-        case 'sudoku':
-            format = c => c.value.length > 1 ? "?" : c.value[0].toString(36).toUpperCase();
-            break;
-        default:
-            format = c => c.value.length > 1 ? "?" : c.value[0] == 1 ? "#" : "."; 
-    }
-    return puzz.grid.cellRows.map(row => row.map(format).join(" ")).join("\n");
 }

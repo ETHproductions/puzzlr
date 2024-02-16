@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import formatPuzzle from "./basic-format.js";
+
 let type, filename, mode = 'thorough', max_depth = 1, debug = 0;
 
 for (let i = 2; i < process.argv.length; i++) {
@@ -91,26 +93,7 @@ try {
     process.exit(1);
 }
 
-let testPuzzle = new PuzzleType(puzzleData);
-testPuzzle.solve({ max_depth, debug, mode });
-console.log('Stats:', testPuzzle.global_stats);
-
-let format;
-switch (type) {
-    case 'dominosa':
-        format = c => {
-            for (let i = 0; i < 4; i++) {
-                if (c.edges[i].value == 1)
-                    return "^>v<"[i];
-            }
-            return "?";
-        };
-        break;
-    case 'sudoku':
-        format = c => c.value.length > 1 ? "?" : c.value[0].toString(36).toUpperCase();
-        break;
-    default:
-        format = c => c.value.length > 1 ? "?" : c.value[0] == 1 ? "#" : "."; 
-}
-for (let row of testPuzzle.grid.cellRows)
-    console.log(row.map(format).join(" "));
+let puzzle = new PuzzleType(puzzleData);
+puzzle.solve({ max_depth, debug, mode });
+console.log('Stats:', puzzle.global_stats);
+console.log(formatPuzzle(puzzle));

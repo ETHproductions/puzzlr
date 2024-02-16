@@ -3,6 +3,7 @@ import { SUM_EQUALS } from '../base/generic-constraints.js';
 import SquareGrid from '../base/SquareGrid.js';
 
 class DominosaPuzzle extends Puzzle {
+    get type() { return 'dominosa'; }
     constructor({ grid, task }) {
         super(SquareGrid.fromSize(grid.width, grid.height));
 

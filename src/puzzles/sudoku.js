@@ -3,6 +3,7 @@ import { CONTAINS_ALL } from '../base/generic-constraints.js';
 import SquareGrid from '../base/SquareGrid.js';
 
 class SudokuPuzzle extends Puzzle {
+    get type() { return 'sudoku'; }
     constructor({ grid, task }) {
         if (task.length != task[0].length)
             throw new Error("Sudoku grid must be square");
