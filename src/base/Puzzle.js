@@ -285,8 +285,8 @@ class Puzzle {
             if (this.ps == base_partsol) {
                 new_partsol = this.ps.child_partsols.shift();
                 while (new_partsol.last_base_update < base_partsol.deductions_made.length) {
-                    if (new_partsol.try_deduction(base_partsol.deductions_made[new_partsol.last_base_update++]))
-                        new_partsol.done = false;
+                    new_partsol.try_deduction(base_partsol.deductions_made[new_partsol.last_base_update++]);
+                    new_partsol.done = false;
                 }
                 if (new_partsol.done) {
                     this.ps.child_partsols.unshift(new_partsol);
@@ -323,8 +323,10 @@ class Puzzle {
                 if (this.ps.child_partsols[0].variable != new_partsol.variable) {
                     // agreement check
                     for (let { variable, value } of PartialSolution.agreement(var_partsols).deductions_made)
-                        if (this.ps.try_deduction({ variable, value }))
+                        if (this.ps.try_deduction({ variable, value })) {
+                            success = true;
                             this.debug_log(2, 'Agreement found:', this.format_var(variable), '=/>', value);
+                        }
                     
                     this.ps.child_partsols.push(...var_partsols);
                     var_partsols = [];

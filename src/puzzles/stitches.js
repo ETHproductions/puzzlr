@@ -10,26 +10,15 @@ class StitchesPuzzle extends Puzzle {
             throw new Error("Task length must equal width of grid plus height of grid");
         this.areas = areas;
 
-        const STITCH_DIRECTION = function([cell, ...edges]) {
-            for (let i = 0; i < 4; i++) {
-                let edgeval = cell.edges[i].value || [0];
-                if ((!cell.value.includes(i) && !edgeval.includes(0)) || (cell.value == i && !edgeval.includes(1)))
-                    return false;
-            }
-            return true;
+        // Conveniently, a cell with value 0 needs to have a sum of 0 across
+        // its edges, while a cell with value 1 needs to have an edge sum of 1
+        // This will be reworked when the constraint system is overhauled
+        const SUM_EQUALS_IF = function([cell, ...edges], target) {
+            if (cell.value.length > 1 || cell.value[0] != target)
+                return true;
+            return SUM_EQUALS(edges, target);
         };
-        const COUNT_EQUALS = function(cells, target) {
-            let vars = [];
-            for (let c of cells) {
-                let value = [];
-                if (c.value.includes(-1))
-                    value.push(0);
-                if (c.value != -1)
-                    value.push(1);
-                vars.push({ value });
-            }
-            return SUM_EQUALS(vars, target);
-        }
+
         this.areaEdges = {};
         for (let i = 0; i <= areas.length; i++) {
             for (let j = i; j <= areas.length; j++) {
@@ -50,19 +39,14 @@ class StitchesPuzzle extends Puzzle {
                 this.addConstraint(SUM_EQUALS, this.areaEdges[id], stitch_count);
         }
         for (let cell of this.grid.cells) {
-            let value = [-1];
-            for (let i = 0; i < 4; i++) {
-                let edge = cell.edges[i];
-                let otherCell = edge.leftCell == cell ? edge.rightCell : edge.leftCell;
-                if (otherCell) value.push(i);
-            }
-            this.addVariable(cell, value, false);
-            this.addConstraint(STITCH_DIRECTION, [cell, ...cell.edges.filter(e => e.value)]);
+            this.addVariable(cell, [0, 1], false);
+            this.addConstraint(SUM_EQUALS_IF, [cell, ...cell.edges.filter(e => e.value)], 0);
+            this.addConstraint(SUM_EQUALS_IF, [cell, ...cell.edges.filter(e => e.value)], 1);
         }
 
         let i = 0;
         for (let vars of [...this.grid.cellCols, ...this.grid.cellRows]) {
-            this.addConstraint(COUNT_EQUALS, vars, sums[i++]);
+            this.addConstraint(SUM_EQUALS, vars, sums[i++]);
         }
     }
 }
