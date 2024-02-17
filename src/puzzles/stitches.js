@@ -1,5 +1,5 @@
 import Puzzle from '../base/Puzzle.js';
-import { SUM_EQUALS } from '../base/generic-constraints.js';
+import { SUM_EQUALS, SUM_EQUALS_IF } from '../base/generic-constraints.js';
 import SquareGrid from '../base/SquareGrid.js';
 
 class StitchesPuzzle extends Puzzle {
@@ -9,15 +9,6 @@ class StitchesPuzzle extends Puzzle {
         if (this.grid.width + this.grid.height != sums.length)
             throw new Error("Task length must equal width of grid plus height of grid");
         this.areas = areas;
-
-        // Conveniently, a cell with value 0 needs to have a sum of 0 across
-        // its edges, while a cell with value 1 needs to have an edge sum of 1
-        // This will be reworked when the constraint system is overhauled
-        const SUM_EQUALS_IF = function([cell, ...edges], target) {
-            if (cell.value.length > 1 || cell.value[0] != target)
-                return true;
-            return SUM_EQUALS(edges, target);
-        };
 
         this.areaEdges = {};
         for (let i = 0; i <= areas.length; i++) {
