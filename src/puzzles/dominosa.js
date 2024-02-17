@@ -12,10 +12,10 @@ class DominosaPuzzle extends Puzzle {
             cell.value = task[y][x];
             if (cell.value > maxNum) maxNum = cell.value;
         });
-        let uniqueDominoes = {};
+        this.uniqueDominoes = {};
         for (let i = 0; i <= maxNum; i++) {
             for (let j = i; j <= maxNum; j++) {
-                uniqueDominoes[[i, j]] = [];
+                this.uniqueDominoes[[i, j]] = [];
             }
         }
         for (let edge of this.grid.edges) {
@@ -24,10 +24,10 @@ class DominosaPuzzle extends Puzzle {
             
             let id = [edge.leftCell.value, edge.rightCell.value];
             if (id[0] > id[1]) id.reverse();
-            uniqueDominoes[id].push(edge);
+            this.uniqueDominoes[id].push(edge);
         }
-        for (let id of Object.keys(uniqueDominoes))
-            this.addConstraint(SUM_EQUALS, uniqueDominoes[id], 1);
+        for (let id of Object.keys(this.uniqueDominoes))
+            this.addConstraint(SUM_EQUALS, this.uniqueDominoes[id], 1);
 
         for (let cell of this.grid.cells) {
             let edges = [];
