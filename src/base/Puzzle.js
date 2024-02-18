@@ -47,8 +47,8 @@ class Puzzle {
      * constraint
      * @param {number|string} target value to pass into the check function
      */
-    addConstraint(check, variables, target) {
-        let constraint = { id: this.constraints.length, check, variables, target };
+    addConstraint(check, variables, ...targets) {
+        let constraint = { id: this.constraints.length, check, variables, targets };
         this.constraints.push(constraint);
         for (let variable of variables) {
             if (variable.constraints == undefined)
@@ -177,7 +177,7 @@ class Puzzle {
         for (let value of values) {
             variable.value = [value];
             this.global_stats.total_constraint_checks++;
-            if (constraint.check(constraint.variables, constraint.target))
+            if (constraint.check(constraint.variables, ...constraint.targets))
                 continue;
             if (this.ps.deduct_queue.find(d => d.variable == variable && d.value == value))
                 continue;

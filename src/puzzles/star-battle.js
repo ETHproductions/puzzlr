@@ -2,9 +2,9 @@ import Puzzle from '../base/Puzzle.js';
 import { SUM_EQUALS, SUM_EQUALS_IF } from '../base/generic-constraints.js';
 import SquareGrid from '../base/SquareGrid.js';
 
-class NorinoriPuzzle extends Puzzle {
-    get type() { return 'norinori'; }
-    constructor({ areas }) {
+class StarBattlePuzzle extends Puzzle {
+    get type() { return 'star-battle'; }
+    constructor({ areas, star_count }) {
         super(SquareGrid.fromAreas(areas));
         this.areas = areas;
 
@@ -14,11 +14,15 @@ class NorinoriPuzzle extends Puzzle {
                 let cell = this.grid.cellmap.get2D(pos.x, pos.y);
                 cells.push(cell);
                 this.addVariable(cell, [0, 1]);
-                this.addConstraint(SUM_EQUALS_IF, [cell, ...cell.adjacentEdge], 1, 1);
+                this.addConstraint(SUM_EQUALS_IF, [cell, ...cell.adjacentAll], 1, 0);
             }
-            this.addConstraint(SUM_EQUALS, cells, 2);
+            this.addConstraint(SUM_EQUALS, cells, star_count);
+        }
+        
+        for (let vars of [...this.grid.cellCols, ...this.grid.cellRows]) {
+            this.addConstraint(SUM_EQUALS, vars, star_count);
         }
     }
 }
 
-export default NorinoriPuzzle;
+export default StarBattlePuzzle;

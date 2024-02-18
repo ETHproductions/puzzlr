@@ -31,8 +31,8 @@ class StitchesPuzzle extends Puzzle {
         }
         for (let cell of this.grid.cells) {
             this.addVariable(cell, [0, 1], false);
-            this.addConstraint(SUM_EQUALS_IF, [cell, ...cell.edges.filter(e => e.value)], 0);
-            this.addConstraint(SUM_EQUALS_IF, [cell, ...cell.edges.filter(e => e.value)], 1);
+            this.addConstraint(SUM_EQUALS_IF, [cell, ...cell.edges.filter(e => e.value)], 0, 0);
+            this.addConstraint(SUM_EQUALS_IF, [cell, ...cell.edges.filter(e => e.value)], 1, 1);
         }
 
         let i = 0;

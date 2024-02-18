@@ -10,10 +10,10 @@ export function SUM_EQUALS(vars, target) {
     return sums.has(target);
 }
 
-export function SUM_EQUALS_IF([var1, ...vars], target) {
-    if (var1.value.length > 1 || var1.value[0] != target)
+export function SUM_EQUALS_IF([var1, ...vars], var_target, sum_target) {
+    if (var1.value.length > 1 || var1.value[0] != var_target)
         return true;
-    return SUM_EQUALS(vars, target);
+    return SUM_EQUALS(vars, sum_target);
 }
 
 export function CONTAINS_ALL(vars, target) {
