@@ -30,6 +30,7 @@ Options:
 ## TODO
 
 - Support search depths beyond 1
+- Support multi-valued variables
 - Generalize implementation of rules
 - Add more puzzle types
 - Add more grid types (see src/PuzzleGrid.js)

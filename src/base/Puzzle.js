@@ -93,7 +93,6 @@ class Puzzle {
         if (!('debug' in options))
             options.debug = 0;
         this.options = options;
-        console.log('Solve initiated in', options.mode, 'mode');
         this.global_stats = {
             total_constraint_checks: 0,
             total_contradiction_checks: 0,
@@ -109,6 +108,10 @@ class Puzzle {
 
         this.base_partsol = this.ps = new PartialSolution(this);
 
+        this.debug_log(0, 'Solve initiated in', options.mode, 'mode');
+        this.debug_log(0, 'Created', this.variables.length, 'variables with mean domain', (this.variables.reduce((p, c) => p + c.value.length, 0) / this.variables.length * 1000 | 0) / 1000);
+        this.debug_log(0, 'Created', this.constraints.length, 'constraints with mean size', (this.constraints.reduce((p, c) => p + c.variables.length, 0) / this.constraints.length * 1000 | 0) / 1000);
+
         for (let constraint of this.constraints)
             for (let variable of constraint.variables)
                 this.ps.check_queue.push({ variable, constraint, deduct_id: '-1' });
@@ -116,7 +119,7 @@ class Puzzle {
 
     solve(options) {
         if (options) this.initiate_solve(options);
-        console.log('Running...');
+        this.debug_log(0, 'Running...');
         while (true) {
             this.simplify();
             if (this.check_if_done())
@@ -183,9 +186,9 @@ class Puzzle {
                 continue;
 
             this.ps.deduct_queue.push({ variable, value, constraint });
-            this.debug_log(2, " " + this.format_var(variable), "with value", value, "fails", this.format_con(constraint));
+            this.debug_log(1, " " + this.format_var(variable), "with value", value, "fails", this.format_con(constraint));
             if (values.every(v => ++this.global_stats.total_contradiction_checks && this.ps.deduct_queue.find(d => d.variable == variable && d.value == v))) {
-                this.debug_log(2, "  Contradiction! Aborting solve...");
+                this.debug_log(1, "  Contradiction! Aborting solve...");
                 this.ps.status = "contradiction";
                 if (typeof this.options.on_contradict == 'function' && this.current_depth == 0) this.options.on_contradict(variable);
                 return false;
@@ -240,17 +243,17 @@ class Puzzle {
 
     prepare_next_depth() {
         let base_partsol = this.ps;
-        if (this.ps.child_partsols.length > 0) {
+        if (this.ps.children.length > 0) {
             let new_child_partsols = [];
-            for (let new_partsol of this.ps.child_partsols) {
+            for (let new_partsol of this.ps.children) {
                 if (new_partsol.variable.value.length == 1)
                     continue;
                 if (this.ps.deductions_made.findIndex(d => d.variable == new_partsol.variable && d.value == new_partsol.value) != -1)
                     continue;
                 new_child_partsols.push(new_partsol);
             }
-            this.debug_log(1, "Culled", this.ps.child_partsols.length - new_child_partsols.length, "partsols,", new_child_partsols.length, "remaining");
-            this.ps.child_partsols = new_child_partsols;
+            this.debug_log(1, "Culled", this.ps.children.length - new_child_partsols.length, "partsols,", new_child_partsols.length, "remaining");
+            this.ps.children = new_child_partsols;
             base_partsol.last_deduction_update = base_partsol.deductions_made.length;
             return;
         }
@@ -266,7 +269,7 @@ class Puzzle {
                     for (let subvariable of constraint.variables)
                         new_partsol.check_queue.push({ variable: subvariable, constraint });
                 }
-                this.ps.child_partsols.push(new_partsol);
+                this.ps.children.push(new_partsol);
             }
         }
         base_partsol.last_deduction_update = 0;
@@ -283,13 +286,13 @@ class Puzzle {
         let success = false;
         while (true) {
             if (this.ps == base_partsol) {
-                new_partsol = this.ps.child_partsols.shift();
+                new_partsol = this.ps.children.shift();
                 while (new_partsol.last_base_update < base_partsol.deductions_made.length) {
                     new_partsol.try_deduction(base_partsol.deductions_made[new_partsol.last_base_update++]);
                     new_partsol.done = false;
                 }
                 if (new_partsol.done) {
-                    this.ps.child_partsols.unshift(new_partsol);
+                    this.ps.children.unshift(new_partsol);
                     break;
                 }
                 new_partsol.restore();
@@ -316,19 +319,19 @@ class Puzzle {
                 }
             }
             else {
-                this.debug_log(1, "Done with", this.format_var(new_partsol.variable), "=>", new_partsol.value);
                 new_partsol.done = true;
                 base_partsol.restore();
+                this.debug_log(2, "Done with", this.format_var(new_partsol.variable), "=>", new_partsol.value);
                 var_partsols.push(new_partsol);
-                if (this.ps.child_partsols[0].variable != new_partsol.variable) {
+                if (this.ps.children[0].variable != new_partsol.variable) {
                     // agreement check
                     for (let { variable, value } of PartialSolution.agreement(var_partsols).deductions_made)
                         if (this.ps.try_deduction({ variable, value })) {
                             success = true;
-                            this.debug_log(2, 'Agreement found:', this.format_var(variable), '=/>', value);
+                            this.debug_log(1, 'Agreement found in', this.format_var(new_partsol.variable) +':', this.format_var(variable), '=/>', value);
                         }
                     
-                    this.ps.child_partsols.push(...var_partsols);
+                    this.ps.children.push(...var_partsols);
                     var_partsols = [];
                     if (success && this.options.mode == 'fast')
                         return true;
@@ -341,17 +344,17 @@ class Puzzle {
 
     check_if_done() {
         if (this.ps.status == 'contradiction') {
-            console.log('Could not solve due to contradiction');
+            this.debug_log(0, 'Could not solve due to contradiction');
             return true;
         }
         if (this.variables.every(v => v.value.length == 1)) {
-            console.log('Puzzle solved in', (new Date - this.start_time)/1000, 'seconds');
+            this.debug_log(0, 'Puzzle solved in', (new Date - this.start_time)/1000, 'seconds');
             this.ps.status = 'solved';
             return true;
         }
         if (this.options.max_depth <= 0) {
             this.ps.status = 'unsolvable';
-            console.log('Could not solve with max depth', this.options.max_depth);
+            this.debug_log(0, 'Could not solve with max depth', this.options.max_depth);
             return true;
         }
         return false;
@@ -363,7 +366,7 @@ class PartialSolution {
         let ps;
         if (puzzle instanceof PartialSolution) {
             ps = puzzle;
-            puzzle = puzzle.puzzle;
+            puzzle = ps.puzzle;
         }
         this.puzzle = puzzle;
         this.depth = puzzle.ps ? puzzle.ps.depth + 1 : 0;
@@ -378,7 +381,7 @@ class PartialSolution {
         this.prior_deductions = puzzle.ps ? puzzle.ps.prior_deductions.concat(puzzle.ps.deductions_made) : [];
         this.last_base_update = this.prior_deductions.length;
         this.assumptions = puzzle.ps ? puzzle.ps.assumptions.concat({ variable, value }) : [];
-        this.child_partsols = [];
+        this.children = [];
 
         this.values = [];
         for (let variable of this.puzzle.variables)
