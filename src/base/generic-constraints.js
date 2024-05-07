@@ -61,3 +61,4 @@ export function CONTIG_EDGE_ALL([edge], target) {
     }
     return false;
 }
+CONTIG_EDGE_ALL.global = true;

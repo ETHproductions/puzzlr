@@ -128,7 +128,7 @@ class Puzzle {
             let success = this.next_depth();
             if (!success) {
                 this.ps.status = 'unsolvable';
-                console.log('Depth not supported!');
+                this.debug_log(0, 'Depth not supported!');
                 return this;
             }
         }
@@ -172,9 +172,9 @@ class Puzzle {
         let check = this.ps.check_queue.shift();
         let variable = check.variable;
         let values = variable.value;
-        if (this.options.mode == 'thorough' && values.length == 1)
-            return true;
         let constraint = check.constraint;
+        if (this.options.mode == 'thorough' && values.length == 1 && !constraint.check.global)
+            return true;
         this.debug_log(3, " Checking", this.format_var(variable), "on", this.format_con(constraint));
 
         for (let value of values) {
@@ -231,8 +231,8 @@ class Puzzle {
         }
 
         for (let constraint of variable.constraints) {
-            for (let variable of constraint.variables) if (variable.value.length > 1) {
-                let existing_check = this.ps.check_queue.findIndex(x => x.variable.var_id == variable.var_id && x.constraint.id == constraint.id);
+            for (let variable of constraint.variables) if (variable.value.length > 1 || constraint.check.global) {
+                let existing_check = this.ps.check_queue.findIndex(x => (x.variable.var_id == variable.var_id || constraint.check.global) && x.constraint.id == constraint.id);
                 if (existing_check == -1)
                     this.ps.check_queue.push({ variable, constraint });
             }

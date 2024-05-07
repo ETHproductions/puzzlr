@@ -1,0 +1,13 @@
+{
+    "puzzle": {
+        "type": "slitherlink",
+        "grid": {
+            "type": "square",
+            "width": 5,
+            "height": 1
+        },
+        "task": [
+            [ 3, -1, -1, -1, 3]
+        ]
+    }
+}
