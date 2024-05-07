@@ -353,7 +353,7 @@ class Puzzle {
             this.debug_log(0, 'Could not solve due to contradiction');
             return true;
         }
-        if (this.variables.every(v => v.value.length == 1)) {
+        if (this.variables.every(v => v.value.length == 1 || !v.must_be_unique)) {
             this.debug_log(0, 'Puzzle solved in', (new Date - this.start_time)/1000, 'seconds');
             this.ps.status = 'solved';
             return true;

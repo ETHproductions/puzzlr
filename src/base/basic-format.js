@@ -12,7 +12,7 @@ export function formatFull(puzz) {
     
     switch (puzz.type) {
         case 'slitherlink':
-            formatCell = c => c.value > -1 ? ' ' + c.value + ' ' : '   ';
+            formatCell = c => c.hint > -1 ? ' ' + c.hint + ' ' : '   ';
             formatEdgeHoriz = e => e.value.length != 1 ? ' ? ' : e.value[0] == 1 ? '---' : '   ';
             formatEdgeVert = e => e.value.length != 1 ? '?' : e.value[0] == 1 ? '|' : ' ';
             break;
@@ -88,29 +88,6 @@ export function formatSimple(puzz) {
         return puzz.grid.cellRows.map(row => row.map(format).join(" ")).join("\n");
     }
     switch (puzz.type) {
-        case 'slitherlink':
-            let output = '';
-            for (let row = 0; row <= height * 2; row++) {
-                for (let col = 0; col <= width * 2; col++) {
-                    if (row % 2 == 0 && col % 2 == 0) {
-                        output += '*';
-                    }
-                    else if (row % 2 == 0 && col % 2 == 1) {
-                        let e = puzz.grid.edgemap.horiz.get2D((col - 1) / 2, row / 2);
-                        output += e.value.length != 1 ? ' ? ' : e.value[0] == 1 ? '---' : '   ';
-                    }
-                    else if (row % 2 == 1 && col % 2 == 0) {
-                        let e = puzz.grid.edgemap.vert.get2D(col / 2, (row - 1) / 2);
-                        output += e.value.length != 1 ? '?' : e.value[0] == 1 ? '|' : ' ';
-                    }
-                    else {
-                        let c = puzz.grid.cellmap.get2D((col - 1) / 2, (row - 1) / 2);
-                        output += c.value > -1 ? ' ' + c.value + ' ' : '   ';
-                    }
-                }
-                output += '\n';
-            }
-            return output;
         case 'dominosa':
         case 'stitches':
             format = c => {
