@@ -95,5 +95,5 @@ try {
 
 let puzzle = new PuzzleType(puzzleData);
 puzzle.solve({ max_depth, debug, mode });
-console.log('Stats:', puzzle.global_stats);
 console.log(formatPuzzle(puzzle));
+console.log('Stats:', puzzle.global_stats);

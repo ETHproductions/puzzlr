@@ -33,7 +33,7 @@ puzzleWorker.onmessage = e => {
     switch (e.data.status) {
         case 'done':
         case 'update':
-            document.getElementById("solution").innerText = e.data.output;
+            document.getElementById("solution").innerText = e.data.output.replace(/ /g, '\xA0');
             break;
         case 'invalid':
             document.getElementById("solution").innerText = "Error processing puzzle";

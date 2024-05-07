@@ -1,0 +1,19 @@
+{
+    "puzzle": {
+        "type": "slitherlink",
+        "grid": {
+            "type": "square",
+            "width": 5,
+            "height": 5
+        },
+        "task": [
+            [-1,-1, 3, 2,-1],
+            [ 3,-1,-1,-1, 2],
+            [ 2,-1, 2,-1, 1],
+            [-1,-1, 0,-1, 2],
+            [-1, 3, 3, 3,-1]
+        ],
+        "puzzleteam_size": "0",
+        "puzzleteam_id": "1,386,925"
+    }
+}
