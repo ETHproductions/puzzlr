@@ -124,7 +124,7 @@ class Puzzle {
             this.simplify();
             if (this.check_if_done())
                 return this;
-            this.prepare_next_depth();
+                    this.prepare_next_depth();
             let success = this.next_depth();
             if (!success) {
                 this.ps.status = 'unsolvable';
@@ -244,6 +244,8 @@ class Puzzle {
     prepare_next_depth() {
         let base_partsol = this.ps;
         if (this.ps.children.length > 0) {
+            // Cull partsols whose variable has been solved or whose value has
+            // been deducted in the parent
             let new_child_partsols = [];
             for (let new_partsol of this.ps.children) {
                 if (new_partsol.variable.value.length == 1)
@@ -258,13 +260,13 @@ class Puzzle {
             return;
         }
 
+        // Create partsols for all remaining variable/value pairs
         for (let variable of this.variables) if (variable.value.length > 1) {
             let values = variable.value.slice();
             for (let value of values) {
                 let new_partsol = new PartialSolution(this, variable, value);
-                new_partsol.values[variable.var_id] = [value];
                 for (let v2 of values) if (v2 != value)
-                    new_partsol.prior_deductions.push({ variable, value: v2 });
+                    new_partsol.deduct_queue.push({ variable, value: v2 });
                 for (let constraint of variable.constraints) {
                     for (let subvariable of constraint.variables)
                         new_partsol.check_queue.push({ variable: subvariable, constraint });
@@ -281,19 +283,23 @@ class Puzzle {
      * In fast mode, returns as soon as an agreement is found in one variable.
      */
     next_depth() {
-        let base_partsol = this.ps, new_partsol;
+        let base_partsol = this.ps, old_partsol, new_partsol;
         let var_partsols = [];
         let success = false;
+        for (let ps of this.ps.children) ps.done = false;
+        this.debug_log(1, 'Starting depth-' + (this.current_depth + 1), 'search');
         while (true) {
             if (this.ps == base_partsol) {
-                new_partsol = this.ps.children.shift();
-                while (new_partsol.last_base_update < base_partsol.deductions_made.length) {
-                    new_partsol.try_deduction(base_partsol.deductions_made[new_partsol.last_base_update++]);
-                    new_partsol.done = false;
-                }
-                if (new_partsol.done) {
-                    this.ps.children.unshift(new_partsol);
+                old_partsol = this.ps.children.shift();
+                if (old_partsol.done) {
+                    this.ps.children.unshift(old_partsol);
                     break;
+                }
+
+                new_partsol = new PartialSolution(this, old_partsol.variable, old_partsol.value);
+                new_partsol.deduct_queue = old_partsol.deduct_queue.slice();
+                for (let deduction of old_partsol.deductions_made) {
+                    new_partsol.try_deduction(deduction);
                 }
                 new_partsol.restore();
             }
@@ -413,7 +419,6 @@ class PartialSolution {
         this.puzzle.global_stats.total_deduction_checks++;
         if (this.deduct_queue.concat(this.deductions_made, this.prior_deductions).findIndex(d => d.variable == deduction.variable && d.value == deduction.value) == -1) {
             this.deduct_queue.push({ variable: deduction.variable, value: deduction.value });
-            this.done = false;
             return true;
         }
         else {
