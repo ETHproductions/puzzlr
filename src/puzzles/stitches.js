@@ -9,6 +9,8 @@ class StitchesPuzzle extends Puzzle {
         if (this.grid.width + this.grid.height != sums.length)
             throw new Error("Task length must equal width of grid plus height of grid");
         this.areas = areas;
+        this.colHints = sums.slice(0, this.grid.width);
+        this.rowHints = sums.slice(this.grid.width);
 
         this.areaEdges = {};
         for (let i = 0; i <= areas.length; i++) {

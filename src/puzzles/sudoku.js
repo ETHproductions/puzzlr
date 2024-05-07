@@ -12,7 +12,11 @@ class SudokuPuzzle extends Puzzle {
             throw new Error("Sudoku boxes must have same number of cells as rows and columns");
         let size = task.length;
 
-        super(SquareGrid.fromSize(size));
+        let areamap = [];
+        for (let i = 0; i < size; i++) areamap.push([]);
+        task.map((r, y) => r.map((c, x) => areamap[(y / boxheight | 0) * boxheight + (x / boxwidth | 0)].push({x, y})));
+
+        super(SquareGrid.fromAreas(areamap));
 
         let areas = [];
         let values = [];

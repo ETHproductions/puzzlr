@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import formatPuzzle from "./src/base/basic-format.js";
+import { formatFull, formatSimple } from "./src/base/basic-format.js";
+let formatPuzzle = formatSimple;
 
 let type, filename, mode = 'thorough', max_depth = 1, debug = 0;
 
@@ -25,6 +26,10 @@ for (let i = 2; i < process.argv.length; i++) {
             case '-l':
             case '--log':
                 debug = process.argv[++i] | 0;
+                break;
+            case '-f':
+            case '--format':
+                formatPuzzle = formatFull;
                 break;
             case '--help':
                 break;
@@ -66,7 +71,8 @@ Enter 'puzzlr <type>' to see available examples for that puzzle type.
 Options:
     -m, --mode: 'fast' or 'thorough' (default='thorough')
     -d, --depth: depth of recursive search (default=1)
-    -l, --log: level of detail in debug log (default=0)`);
+    -l, --log: level of detail in debug log (default=0)
+    -f, --format: output solution in larger format`);
 
     process.exit(0);
 }

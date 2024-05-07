@@ -1,5 +1,5 @@
 let formatPuzzle;
-import(`./src/base/basic-format.js`).then(data => formatPuzzle = data.default);
+import(`./src/base/basic-format.js`).then(data => formatPuzzle = data.formatFull);
 
 let puzzleTypeCache = {};
 let puzzleData = null;

@@ -1,7 +1,7 @@
 document.getElementById("puzzfile").onchange = (e) => {
-    document.getElementById("button-solve").disabled = true;
     let file = e.target.files[0];
     if (!file) return;
+    document.getElementById("button-solve").disabled = true;
     console.log('Reading data from', file.name);
 
     let reader = new FileReader();

@@ -9,6 +9,8 @@ class ThermometersPuzzle extends Puzzle {
         if (this.grid.width + this.grid.height != sums.length)
             throw new Error("Task length must equal width of grid plus height of grid");
         this.areas = thermometers;
+        this.colHints = sums.slice(0, this.grid.width);
+        this.rowHints = sums.slice(this.grid.width);
         this.structures = { thermo: [] };
 
         const THERMO_LENGTH = function([thermo, cell], target) {
@@ -28,7 +30,8 @@ class ThermometersPuzzle extends Puzzle {
                 thermo.vars.push(cell);
                 thermo.value.push(thermo.vars.length);
 
-                this.addConstraint(THERMO_LENGTH, [thermo, cell], thermo.vars.length - 1);
+                cell.thermoIndex = thermo.vars.length - 1;
+                this.addConstraint(THERMO_LENGTH, [thermo, cell], cell.thermoIndex);
             }
             this.structures.thermo.push(thermo);
         }
