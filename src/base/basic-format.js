@@ -82,11 +82,7 @@ export function formatFull(puzz) {
 }
 
 export function formatSimple(puzz) {
-    let format;
-    let width = puzz.grid.width, height = puzz.grid.height;
-    function formatCells(f) {
-        return puzz.grid.cellRows.map(row => row.map(format).join(" ")).join("\n");
-    }
+    let format = c => c.value.length > 1 ? "?" : c.value[0] == 1 ? "#" : ".";
     switch (puzz.type) {
         case 'dominosa':
         case 'stitches':
@@ -100,12 +96,10 @@ export function formatSimple(puzz) {
                 }
                 return "?.^>v<"[dir + 2];
             };
-            return formatCells(format);
+            break;
         case 'sudoku':
             format = c => c.value.length > 1 ? "?" : c.value[0].toString(36).toUpperCase();
-            return formatCells(format);
-        default:
-            format = c => c.value.length > 1 ? "?" : c.value[0] == 1 ? "#" : "."; 
-            return formatCells(format);
+            break;
     }
+    return puzz.grid.cellRows.map(row => row.map(format).join(" ")).join("\n");
 }

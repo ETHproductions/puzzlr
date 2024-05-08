@@ -16,9 +16,9 @@ class SlitherlinkPuzzle extends Puzzle {
                 return true;
             return false;
         }
+        this.addConstraint(CONTIG_EDGE_ALL, this.grid.edges, 1);
         for (let edge of this.grid.edges) {
             this.addVariable(edge, [0, 1]);
-            this.addConstraint(CONTIG_EDGE_ALL, [edge], 1);
             this.addConstraint(DIFF_EQUALS, [edge, edge.leftCell, edge.rightCell].filter(x => x));
         }
         for (let vert of this.grid.verts) {

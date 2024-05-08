@@ -38,8 +38,8 @@ export function CONTAINS_ALL(vars, target) {
     return sets.has(2 ** target.length - 1);
 }
 
-export function CONTIG_EDGE_ALL([edge], target) {
-    let all_remaining = edge.grid.edges.filter(e => e.value.length == 1 && e.value[0] == target);
+export function CONTIG_EDGE_ALL(edges, target) {
+    let all_remaining = edges.filter(e => e.value.length == 1 && e.value[0] == target);
     let check_queue = all_remaining.slice(0, 1);
     let remaining = new Set(all_remaining.slice(1));
     let found = new Set();

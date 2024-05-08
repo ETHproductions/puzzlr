@@ -267,10 +267,6 @@ class Puzzle {
                 let new_partsol = new PartialSolution(this, variable, value);
                 for (let v2 of values) if (v2 != value)
                     new_partsol.deduct_queue.push({ variable, value: v2 });
-                for (let constraint of variable.constraints) {
-                    for (let subvariable of constraint.variables)
-                        new_partsol.check_queue.push({ variable: subvariable, constraint });
-                }
                 this.ps.children.push(new_partsol);
             }
         }
