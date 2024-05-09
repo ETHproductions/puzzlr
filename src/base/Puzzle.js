@@ -124,7 +124,7 @@ class Puzzle {
             this.simplify();
             if (this.check_if_done())
                 return this;
-                    this.prepare_next_depth();
+            this.prepare_next_depth();
             let success = this.next_depth();
             if (!success) {
                 this.ps.status = 'unsolvable';
@@ -325,19 +325,19 @@ class Puzzle {
                 base_partsol.restore();
                 this.debug_log(2, "Done with", this.format_var(new_partsol.variable), "=>", new_partsol.value);
                 var_partsols.push(new_partsol);
-                if (this.ps.children[0].variable != new_partsol.variable) {
-                    // agreement check
-                    for (let { variable, value } of PartialSolution.agreement(var_partsols).deductions_made)
-                        if (this.ps.try_deduction({ variable, value })) {
-                            success = true;
-                            this.debug_log(1, 'Agreement found in', this.format_var(new_partsol.variable) +':', this.format_var(variable), '=/>', value);
-                        }
-                    
-                    this.ps.children.push(...var_partsols);
-                    var_partsols = [];
-                    if (success && this.options.mode == 'fast')
-                        return true;
-                }
+            }
+            if (this.ps == base_partsol && this.ps.children[0].variable != new_partsol.variable) {
+                // agreement check
+                for (let { variable, value } of PartialSolution.agreement(var_partsols).deductions_made)
+                    if (this.ps.try_deduction({ variable, value })) {
+                        success = true;
+                        this.debug_log(1, 'Agreement found in', this.format_var(new_partsol.variable) +':', this.format_var(variable), '=/>', value);
+                    }
+                
+                this.ps.children.push(...var_partsols);
+                var_partsols = [];
+                if (success && this.options.mode == 'fast')
+                    return true;
             }
         }
         this.debug_log(1, 'Finished depth-' + (this.current_depth + 1), 'search');
