@@ -84,6 +84,29 @@ export function formatFull(puzz) {
 export function formatSimple(puzz) {
     let format = c => c.value.length > 1 ? "?" : c.value[0] == 1 ? "#" : ".";
     switch (puzz.type) {
+        case 'slitherlink':
+            let cellqueue = [];
+            let cellmap = puzz.grid.cellmap.map((cell, {x, y}) => {
+                for (let edge of cell.edges) if (edge.isEdgeOfGrid && edge.value.length == 1) {
+                    cellqueue.push(cell);
+                    return edge.value[0];
+                }
+                return -1;
+            });
+            while (cellqueue.length > 0) {
+                let cell = cellqueue.shift();
+                let color = cellmap.get2D(cell.vpos.x, cell.vpos.y);
+                for (let edge of cell.edges) if (!edge.isEdgeOfGrid && edge.value.length == 1) {
+                    let otherCell = edge.otherCell(cell);
+                    let {x, y} = otherCell.vpos;
+                    if (cellmap.get2D(x, y) == -1) {
+                        cellmap.set2D(x, y, color ^ edge.value[0]);
+                        cellqueue.push(otherCell);
+                    }
+                }
+            }
+            format = c => '?.#'[cellmap.get2D(c.vpos.x, c.vpos.y) + 1];
+            break;
         case 'dominosa':
         case 'stitches':
             format = c => {

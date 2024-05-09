@@ -477,6 +477,20 @@ class GridEdge {
         throw new Error('Vertex provided is not an endpoint of this edge');
     }
 
+    /**
+     * Takes one cell adjacent to this edge and returns the other. If the cell
+     * provided is not adjacent to this edge, throws an error.
+     * @param {GridCell} cell one cell on this edge
+     * @returns the other cell on this edge
+     */
+    otherCell(cell) {
+        if (cell == this.leftCell)
+            return this.rightCell;
+        if (cell == this.rightCell)
+            return this.leftCell;
+        throw new Error('Cell provided is not adjacent to this edge');
+    }
+
     get isEdgeOfGrid() {
         return (this.leftCell == null) || (this.rightCell == null);
     }

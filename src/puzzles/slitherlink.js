@@ -4,7 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class SlitherlinkPuzzle extends Puzzle {
     get type() { return 'slitherlink'; }
-    constructor({ grid, task }) {
+    constructor({ grid, task, color = false }) {
         super(SquareGrid.fromSize(grid.width, grid.height));
         
         function DIFF_EQUALS([edge, cell1, cell2]) {
@@ -19,13 +19,13 @@ class SlitherlinkPuzzle extends Puzzle {
         this.addConstraint(CONTIG_EDGE_ALL, this.grid.edges, 1);
         for (let edge of this.grid.edges) {
             this.addVariable(edge, [0, 1]);
-            this.addConstraint(DIFF_EQUALS, [edge, edge.leftCell, edge.rightCell].filter(x => x));
+            if (color) this.addConstraint(DIFF_EQUALS, [edge, edge.leftCell, edge.rightCell].filter(x => x));
         }
         for (let vert of this.grid.verts) {
             this.addConstraint(SUM_EQUALS_ANY, vert.edges, [0, 2]);
         }
         this.grid.cellmap.map((cell, {x, y}) => {
-            this.addVariable(cell, [0, 1], false);
+            if (color) this.addVariable(cell, [0, 1], false);
             let hint = task[y][x];
             if (hint != -1) {
                 cell.hint = hint;
