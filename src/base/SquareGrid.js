@@ -146,13 +146,13 @@ class SquareGrid extends PuzzleGrid {
 
                 // Create a vertical edge from this cell, if necessary
                 if (cells & 0b1100) {
-                    this.addEdge(this.vertmap.get2D(x, y - 1), this.lastVert);
+                    this.addEdge(this.vertmap.get2D(x, y - 1), this.lastVert, { d: 'v', x, y: y - 1 });
                     this.edgemap.vert.set2D(x, y - 1, this.lastEdge);
                 }
                 // Create a horizontal edge from this cell, if necessary
                 // If there isn't a cell to the top left, avoid creating one
                 if (cells & 0b1010) {
-                    this.addEdge(this.vertmap.get2D(x - 1, y), this.lastVert, !(cells & 0b1000));
+                    this.addEdge(this.vertmap.get2D(x - 1, y), this.lastVert, { d: 'h', x: x - 1, y }, !(cells & 0b1000));
                     this.edgemap.horiz.set2D(x - 1, y, this.lastEdge);
                 }
 
