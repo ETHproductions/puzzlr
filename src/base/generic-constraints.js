@@ -38,27 +38,71 @@ export function CONTAINS_ALL(vars, target) {
     return sets.has(2 ** target.length - 1);
 }
 
-export function CONTIG_EDGE_ALL(edges, target) {
-    let all_remaining = edges.filter(e => e.value.length == 1 && e.value[0] == target);
-    let check_queue = all_remaining.slice(0, 1);
-    let remaining = new Set(all_remaining.slice(1));
-    let found = new Set();
+export function CONTIG_EDGE_ALL(edges, target, start) {
+    // Strategy: run this check every time an edge has its value changed.
 
-    if (remaining.size == 0) return true;
-
-    while (check_queue.length > 0) {
-        let next = check_queue.pop();
-        found.add(next);
-        for (let e of [...next.fromVert.edges, ...next.toVert.edges]) {
-            if (found.has(e) || check_queue.includes(e)) continue;
-            if (!e.value?.includes(target)) continue;
-            check_queue.push(e);
-            if (remaining.has(e)) {
-                remaining.delete(e);
-                if (remaining.size == 0) return true;
+    // If an edge had all non-target values removed, check to see if it is
+    // still connected to at least one other edge with only the target value
+    // (let's call this a "solid" edge).
+    // Works because all existing solid edges must have been validated already.
+    if (start.value == target) {
+        let found = new Set([start]);
+        let check_queue = [start.fromVert, start.toVert];
+        if (!edges.some(e => e.value == target && e != start)) return true;
+        
+        // This branch only exists to rule out a potential loop in the puzzle
+        // completely disconnected from the main loop, see: slitherlink/5x5-test
+        // Otherwise a simple 'return true' would work fine
+        while (check_queue.length > 0) {
+            let nextVert = check_queue.pop();
+            for (let edge of nextVert.edges) {
+                if (!edges.includes(edge)) continue;
+                if (found.has(edge)) continue;
+                if (!edge.value.includes(target)) continue;
+                if (edge.value == target) return true;
+                found.add(edge);
+                let otherVert = edge.otherVert(nextVert);
+                if (!check_queue.includes(otherVert))
+                    check_queue.push(otherVert);
             }
         }
+        return false;
     }
-    return false;
+
+    // If an edge had the target value removed, start at both vertices and
+    // expand alternatingly until a connection is found between the branches.
+    else if (!start.value.includes(target)) {
+        // Future work: this will run multiple times if there are multiple non-target values
+        let paths = [
+            { check_queue: [start.fromVert], found: new Set([]) },
+            { check_queue: [start.toVert], found: new Set([]) }
+        ];
+        while (paths[0].check_queue.length > 0) {
+            let { check_queue, found } = paths.shift();
+            let nextVert = check_queue.pop();
+            for (let edge of nextVert.edges) {
+                if (!edges.includes(edge)) continue;
+                if (found.has(edge)) continue;
+                if (!edge.value.includes(target)) continue;
+                if (paths[0].found.has(edge)) return true;
+                found.add(edge);
+                let otherVert = edge.otherVert(nextVert);
+                if (!check_queue.includes(otherVert))
+                    check_queue.push(otherVert);
+            }
+            paths.push({ check_queue, found });
+        }
+        
+        // If one of the two branches runs out of vertices before they meet,
+        // it's not necessarily the end! If either branch contains none of the
+        // remaining solid edges, we're still good (but that branch will need
+        // to disappear).
+        let edges_found = 0;
+        for (let edge of paths[0].found)
+            if (edge.value == target)
+                edges_found++;
+        return edges_found == 0 || edges_found == edges.filter(e => e.value == target).length;
+    }
+    else return true;
 }
 CONTIG_EDGE_ALL.global = true;

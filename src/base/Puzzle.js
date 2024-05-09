@@ -231,10 +231,10 @@ class Puzzle {
         }
 
         for (let constraint of variable.constraints) {
-            for (let variable of constraint.variables) if (variable.value.length > 1 || constraint.check.global) {
-                let existing_check = this.ps.check_queue.findIndex(x => (x.variable.var_id == variable.var_id || constraint.check.global) && x.constraint.id == constraint.id);
+            for (let subvar of constraint.check.global ? [variable] : constraint.variables.filter(v => v.value.length > 1)) {
+                let existing_check = this.ps.check_queue.findIndex(x => (x.variable.var_id == subvar.var_id) && x.constraint.id == constraint.id);
                 if (existing_check == -1)
-                    this.ps.check_queue.push({ variable, constraint });
+                    this.ps.check_queue.push({ variable: subvar, constraint });
             }
         }
 

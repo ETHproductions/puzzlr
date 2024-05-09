@@ -463,6 +463,20 @@ class GridEdge {
         this.rightCell = null;
     }
 
+    /**
+     * Takes an endpoint of this edge and returns the other endpoint. If the
+     * vertex provided is not an endpoint of this edge, throws an error.
+     * @param {GridVertex} vert one vertex on this edge
+     * @returns the other vertex on this edge
+     */
+    otherVert(vert) {
+        if (vert == this.fromVert)
+            return this.toVert;
+        if (vert == this.toVert)
+            return this.fromVert;
+        throw new Error('Vertex provided is not an endpoint of this edge');
+    }
+
     get isEdgeOfGrid() {
         return (this.leftCell == null) || (this.rightCell == null);
     }
