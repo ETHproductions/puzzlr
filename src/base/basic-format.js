@@ -5,7 +5,7 @@
 export function formatFull(puzz) {
     let width = puzz.grid.width, height = puzz.grid.height;
     
-    let formatCell = c => c.value.length != 1 ? ' ? ' : c.value[0] == 1 ? '(#)' : '   ';
+    let formatCell = c => c.value.length != 1 ? ' ? ' : c.value[0] == 1 ? ' # ' : ' \xB7 ';
     let formatEdgeHoriz = e => e.isEdgeOfGrid || e.leftCell.area_id != e.rightCell.area_id ? '---' : '   ';
     let formatEdgeVert = e => e.isEdgeOfGrid || e.leftCell.area_id != e.rightCell.area_id ? '|' : ' ';
     let formatVertex = v => '+';
@@ -30,7 +30,9 @@ export function formatFull(puzz) {
                     else if (c.edges[i].value?.length > 1)
                         dir = -2;
                 }
-                return [" ? ","   ","(^)","(>)","(v)","(<)"][dir + 2];
+                if (dir == -2)
+                    return c.value == 1 ? "(?)" : " ? ";
+                return [" \xB7 ","(^)","(>)","(v)","(<)"][dir + 1];
             };
             formatEdgeHoriz = e => e.isEdgeOfGrid ? '---' : e.leftCell.area_id == e.rightCell.area_id ? '   ' : e.value.length != 1 ? '-?-' : e.value[0] == 1 ? '-|-' : '---';
             formatEdgeVert = e => e.isEdgeOfGrid ? '|' : e.leftCell.area_id == e.rightCell.area_id ? ' ' : e.value.length != 1 ? '?' : e.value[0] == 1 ? '\u2013' : '|';
@@ -39,7 +41,7 @@ export function formatFull(puzz) {
             formatCell = c => c.value.length != 1 ? " ? " : " " + c.value[0].toString(36).toUpperCase() + " ";
             break;
         case 'thermometers':
-            formatCell = c => c.value.length != 1 ? ' ? ' : c.value[0] == 1 ? c.thermoIndex == 0 ? '(@)' : '(#)' : c.thermoIndex == 0 ? ' * ' : '   ';
+            formatCell = c => (c.thermoIndex == 0 ? '()' : '  ').split('').join(c.value.length != 1 ? '?' : c.value[0] == 1 ? '#' : '\xB7');
             formatEdgeHoriz = e => e.isEdgeOfGrid || e.leftCell.area_id != e.rightCell.area_id || Math.abs(e.leftCell.thermoIndex - e.rightCell.thermoIndex) != 1 ? '---' : '   ';
             formatEdgeVert = e => e.isEdgeOfGrid || e.leftCell.area_id != e.rightCell.area_id || Math.abs(e.leftCell.thermoIndex - e.rightCell.thermoIndex) != 1 ? '|' : ' ';
             break;
