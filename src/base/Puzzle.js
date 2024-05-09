@@ -180,7 +180,7 @@ class Puzzle {
         for (let value of values) {
             variable.value = [value];
             this.global_stats.total_constraint_checks++;
-            if (constraint.check(constraint.variables, ...constraint.targets))
+            if (constraint.check(constraint.variables, ...constraint.targets, variable))
                 continue;
             if (this.ps.deduct_queue.find(d => d.variable == variable && d.value == value))
                 continue;
