@@ -32,6 +32,7 @@ puzzleWorker.onmessage = e => {
     // console.log("Message received from child:", e.data);
     switch (e.data.status) {
         case 'done':
+        case 'ready':
         case 'update':
             document.getElementById("solution").innerText = e.data.output.replace(/ /g, '\xA0');
             break;
