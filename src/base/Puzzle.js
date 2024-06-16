@@ -306,25 +306,14 @@ class Puzzle {
                 new_partsol.restore();
             }
 
+            let contradiction = false;
             if ((this.options.mode == 'thorough' || this.ps.deduct_queue.length == 0) && this.ps.check_queue.length > 0) {
-                if (!this.next_check()) {
-                    // contradiction, discard this child and add to the deduct queue
-                    base_partsol.restore();
-                    if (base_partsol.try_deduction(new_partsol)) {
-                        this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
-                        success = true;
-                    }
-                }
+                if (!this.next_check())
+                    contradiction = true;
             }
             else if ((this.options.mode == 'fast' || this.ps.check_queue.length == 0) && this.ps.deduct_queue.length > 0) {
-                if (!this.next_deduct()) {
-                    // contradiction, discard this child and add to the deduct queue
-                    base_partsol.restore();
-                    if (base_partsol.try_deduction(new_partsol)) {
-                        this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
-                        success = true;
-                    }
-                }
+                if (!this.next_deduct())
+                    contradiction = true;
             }
             else {
                 new_partsol.done = true;
@@ -332,13 +321,22 @@ class Puzzle {
                 this.debug_log(2, "Done with", this.format_var(new_partsol.variable), "=>", new_partsol.value);
                 var_partsols.push(new_partsol);
             }
+            if (contradiction) {
+                // discard this child and add to the deduct queue
+                base_partsol.restore();
+                if (base_partsol.try_deduction(new_partsol)) {
+                    success = true;
+                    this.debug_log(2, 'Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value);
+                }
+            }
             if (this.ps == base_partsol && this.ps.children[0].variable != new_partsol.variable) {
                 // agreement check
-                for (let deduction of PartialSolution.agreement(var_partsols).deductions_made)
+                for (let deduction of PartialSolution.agreement(var_partsols).deductions_made) {
                     if (this.ps.try_deduction(deduction)) {
                         success = true;
-                        this.debug_log(1, 'Agreement found in', this.format_var(new_partsol.variable) +':', this.format_var(deduction.variable), '=/>', deduction.value);
+                        this.debug_log(2, 'Agreement found in', this.format_var(new_partsol.variable) + ':', this.format_var(deduction.variable), '=/>', deduction.value);
                     }
+                }
                 
                 this.ps.children.push(...var_partsols);
                 var_partsols = [];
