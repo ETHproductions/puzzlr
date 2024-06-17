@@ -107,9 +107,9 @@ class Puzzle {
         this.start_time = new Date;
         this.current_deduct_id = [];
         this.current_depth = 0;
-        this.current_max_depth = 0;
 
         this.base_partsol = this.ps = new PartialSolution(this);
+        this.partsols_by_depth = [[ this.base_partsol ]];
 
         this.debug_log(0, 'Solve initiated in', options.mode, 'mode');
         this.debug_log(0, 'Created', this.variables.length, 'variables with mean domain', (this.variables.reduce((p, c) => p + c.value.length, 0) / this.variables.length * 1000 | 0) / 1000);
@@ -123,17 +123,24 @@ class Puzzle {
     solve(options) {
         if (options) this.initiate_solve(options);
         this.debug_log(0, 'Running...');
-        while (true) {
+        solveloop: while (true) {
             this.simplify();
             if (this.check_if_done())
                 return this;
-            this.prepare_next_depth();
-            let success = this.next_depth();
-            if (!success) {
-                this.ps.status = 'unsolvable';
-                this.debug_log(0, 'Depth not supported!');
-                return this;
+
+            while (this.current_depth <= this.options.max_depth) {
+                this.current_depth++;
+                this.prepare_next_depth();
+                let success = this.run_next_depth();
+                if (success) {
+                    this.current_depth = 0;
+                    continue solveloop;
+                }
             }
+
+            this.ps.status = 'unsolvable';
+            this.debug_log(0, 'Depth not supported!');
+            return this;
         }
     }
 
@@ -249,24 +256,25 @@ class Puzzle {
 
     prepare_next_depth() {
         let base_partsol = this.ps;
-        if (this.ps.children.length > 0) {
+        if (this.partsols_by_depth.length > this.current_depth) {
             // Cull partsols whose variable has been solved or whose value has
             // been deducted in the parent
             let new_child_partsols = [];
-            for (let new_partsol of this.ps.children) {
+            for (let new_partsol of this.partsols_by_depth[this.current_depth]) {
                 if (new_partsol.variable.value.length == 1)
                     continue;
                 if (this.ps.deductions_made.findIndex(d => d.variable == new_partsol.variable && d.value == new_partsol.value) != -1)
                     continue;
                 new_child_partsols.push(new_partsol);
             }
-            this.debug_log(2, "Culled", this.ps.children.length - new_child_partsols.length, "partsols,", new_child_partsols.length, "remaining");
-            this.ps.children = new_child_partsols;
+            this.debug_log(2, "Culled", this.partsols_by_depth[this.current_depth].length - new_child_partsols.length, "partsols,", new_child_partsols.length, "remaining");
+            this.partsols_by_depth[this.current_depth] = new_child_partsols;
             base_partsol.last_deduction_update = base_partsol.deductions_made.length;
-            this.debug_log(1, 'Resuming depth-' + (this.current_depth + 1), 'search');
+            this.debug_log(1, 'Resuming depth-' + this.current_depth, 'search');
             return;
         }
 
+        let child_partsols = [];
         // Create partsols for all remaining variable/value pairs
         for (let variable of this.variables) if (variable.value.length > 1) {
             let values = variable.value.slice();
@@ -274,11 +282,12 @@ class Puzzle {
                 let new_partsol = new PartialSolution(this, variable, value);
                 for (let v2 of values) if (v2 != value)
                     new_partsol.deduct_queue.push({ variable, value: v2 });
-                this.ps.children.push(new_partsol);
+                    child_partsols.push(new_partsol);
             }
         }
+        this.partsols_by_depth[this.current_depth] = child_partsols;
         base_partsol.last_deduction_update = 0;
-        this.debug_log(1, 'Starting depth-' + (this.current_depth + 1), 'search');
+        this.debug_log(1, 'Starting depth-' + this.current_depth, 'search');
     }
 
     /**
@@ -286,16 +295,16 @@ class Puzzle {
      * true if any contradictions and/or agreements are found, false otherwise.
      * In fast mode, returns as soon as an agreement is found in one variable.
      */
-    next_depth() {
+    run_next_depth() {
         let base_partsol = this.ps, old_partsol, new_partsol;
-        let var_partsols = [];
+        let var_partsols = [], current_partsols = this.partsols_by_depth[this.current_depth];
         let success = false;
-        for (let ps of this.ps.children) ps.done = false;
+        for (let ps of current_partsols) ps.done = false;
         while (true) {
             if (this.ps == base_partsol) {
-                old_partsol = this.ps.children.shift();
+                old_partsol = current_partsols.shift();
                 if (old_partsol.done) {
-                    this.ps.children.unshift(old_partsol);
+                    current_partsols.unshift(old_partsol);
                     break;
                 }
 
@@ -330,7 +339,7 @@ class Puzzle {
                     this.debug_log(2, () => ['Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value]);
                 }
             }
-            if (this.ps == base_partsol && this.ps.children[0].variable != new_partsol.variable) {
+            if (this.ps == base_partsol && current_partsols[0].variable != new_partsol.variable) {
                 // agreement check
                 for (let deduction of PartialSolution.agreement(var_partsols).deductions_made) {
                     if (this.ps.try_deduction(deduction)) {
@@ -339,13 +348,13 @@ class Puzzle {
                     }
                 }
                 
-                this.ps.children.push(...var_partsols);
+                current_partsols.push(...var_partsols);
                 var_partsols = [];
                 if (success && this.options.mode == 'fast')
                     return true;
             }
         }
-        this.debug_log(1, 'Finished depth-' + (this.current_depth + 1), 'search');
+        this.debug_log(1, 'Finished depth-' + this.current_depth, 'search');
         return success;
     }
 
