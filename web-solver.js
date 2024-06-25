@@ -5,7 +5,7 @@ let puzzleTypeCache = {};
 let puzzleData = null;
 let puzzleType = null;
 let livePuzzle = null;
-let options = { max_depth: 1, mode: 'fast' };
+let options = { max_depth: 2, mode: 'fast' };
 
 onmessage = (e) => {
     let message = e.data;

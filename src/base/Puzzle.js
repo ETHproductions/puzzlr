@@ -90,7 +90,7 @@ class Puzzle {
      */
     initiate_solve(options) {
         if (typeof options.max_depth != 'number')
-            throw new Error('Puzzle.solve(): no or invalid max_depth parameter provided');
+            throw new Error("Puzzle.solve(): no or invalid max_depth parameter provided");
         if (!['fast', 'thorough'].includes(options.mode))
             options.mode = 'thorough';
         if (!('debug' in options))
@@ -102,6 +102,7 @@ class Puzzle {
             total_context_switches: 0,
             total_deduction_checks: 0,
             invalid_deductions: 0,
+            partsol_rebases: 0,
             measured_time: 0,
         };
         this.start_time = new Date;
@@ -111,9 +112,9 @@ class Puzzle {
         this.base_partsol = this.ps = new PartialSolution(this);
         this.partsols_by_depth = [[ this.base_partsol ]];
 
-        this.debug_log(0, 'Solve initiated in', options.mode, 'mode');
-        this.debug_log(0, 'Created', this.variables.length, 'variables with mean domain', (this.variables.reduce((p, c) => p + c.value.length, 0) / this.variables.length * 1000 | 0) / 1000);
-        this.debug_log(0, 'Created', this.constraints.length, 'constraints with mean size', (this.constraints.reduce((p, c) => p + c.variables.length, 0) / this.constraints.length * 1000 | 0) / 1000);
+        this.debug_log(0, "Solve initiated in", options.mode, "mode");
+        this.debug_log(0, "Created", this.variables.length, "variables with mean domain", (this.variables.reduce((p, c) => p + c.value.length, 0) / this.variables.length * 1000 | 0) / 1000);
+        this.debug_log(0, "Created", this.constraints.length, "constraints with mean size", (this.constraints.reduce((p, c) => p + c.variables.length, 0) / this.constraints.length * 1000 | 0) / 1000);
 
         for (let constraint of this.constraints)
             for (let variable of constraint.variables)
@@ -122,13 +123,13 @@ class Puzzle {
 
     solve(options) {
         if (options) this.initiate_solve(options);
-        this.debug_log(0, 'Running...');
+        this.debug_log(0, "Running...");
         solveloop: while (true) {
             this.simplify();
             if (this.check_if_done())
                 return this;
 
-            while (this.current_depth <= this.options.max_depth) {
+            while (this.current_depth < this.options.max_depth) {
                 this.current_depth++;
                 this.prepare_next_depth();
                 let success = this.run_next_depth();
@@ -139,7 +140,7 @@ class Puzzle {
             }
 
             this.ps.status = 'unsolvable';
-            this.debug_log(0, 'Depth not supported!');
+            this.debug_log(0, "Depth not supported!");
             return this;
         }
     }
@@ -199,14 +200,14 @@ class Puzzle {
             this.debug_log(1, () => [" " + this.format_var(variable), "with value", value, "fails", this.format_con(constraint)]);
             if (values.every(v => ++this.global_stats.total_contradiction_checks && this.ps.deduct_queue.find(d => d.variable == variable && d.value == v))) {
                 this.debug_log(1, "  Contradiction! Aborting solve...");
-                this.ps.status = "contradiction";
-                if (typeof this.options.on_contradict == 'function' && this.current_depth == 0) this.options.on_contradict(variable);
+                this.ps.status = 'contradiction';
+                if (typeof this.options.on_contradict == 'function') this.options.on_contradict(variable);
                 return false;
             }
         }
 
         variable.value = values;
-        if (typeof this.options.on_check == 'function' && this.current_depth == 0) this.options.on_check(check);
+        if (typeof this.options.on_check == 'function') this.options.on_check(check);
         return true;
     }
 
@@ -226,30 +227,27 @@ class Puzzle {
             return true;
         }
 
-        if (this.ps.variable == variable)
+        if (this.ps.assumptions.some(a => a.variable == variable))
             this.debug_log(1, () => ["Deduction", deduction.id, ":", this.format_var(variable), "removing value", deduction.value]);
         else
             this.debug_log(1, () => ["Deduction", deduction.id, ":", this.format_var(variable), "cannot have value", deduction.value, "due to", deduction.constraint ? this.format_con(deduction.constraint) : "future contradiction"]);
         variable.value.splice(variable.value.indexOf(deduction.value), 1);
-        if (typeof this.options.on_deduct == 'function' && this.current_depth == 0) this.options.on_deduct(deduction);
+        if (typeof this.options.on_deduct == 'function') this.options.on_deduct(deduction);
         if (variable.value.length == 1) {
             this.debug_log(1, () => ["  " + this.format_var(variable), "has value", variable.value[0]]);
-            if (typeof this.options.on_value == 'function' && this.current_depth == 0) this.options.on_value(variable);
+            if (typeof this.options.on_value == 'function') this.options.on_value(variable);
         }
         else if (variable.value.length == 0) {
             this.debug_log(1, "  Contradiction! Aborting solve...");
             this.ps.status = 'contradiction';
-            if (typeof this.options.on_contradict == 'function' && this.current_depth == 0) this.options.on_contradict(variable);
+            if (typeof this.options.on_contradict == 'function') this.options.on_contradict(variable);
             return false;
         }
 
-        for (let constraint of variable.constraints) {
-            for (let subvar of constraint.check.global ? [variable] : constraint.variables.filter(v => v.value.length > 1)) {
-                let existing_check = this.ps.check_queue.findIndex(x => (x.variable.var_id == subvar.var_id) && x.constraint.id == constraint.id);
-                if (existing_check == -1)
+        for (let constraint of variable.constraints)
+            for (let subvar of constraint.check.global ? [variable] : constraint.variables.filter(v => v.value.length > 1))
+                if (!this.ps.check_queue.some(x => x.variable.var_id == subvar.var_id && x.constraint.id == constraint.id))
                     this.ps.check_queue.push({ variable: subvar, constraint });
-            }
-        }
 
         return true;
     }
@@ -257,37 +255,47 @@ class Puzzle {
     prepare_next_depth() {
         let base_partsol = this.ps;
         if (this.partsols_by_depth.length > this.current_depth) {
-            // Cull partsols whose variable has been solved or whose value has
-            // been deducted in the parent
+            // Cull partsols whose variables have been solved or who have a
+            // value that has been deducted in the base
             let new_child_partsols = [];
             for (let new_partsol of this.partsols_by_depth[this.current_depth]) {
-                if (new_partsol.variable.value.length == 1)
+                if (new_partsol.status == 'contradiction')
                     continue;
-                if (this.ps.deductions_made.findIndex(d => d.variable == new_partsol.variable && d.value == new_partsol.value) != -1)
+                if (new_partsol.assumptions.some(a => this.base_partsol.values[a.variable.var_id].length == 1))
+                    continue;
+                if (new_partsol.assumptions.some(a => this.ps.deductions_made.some(d => d.variable == a.variable && d.value == a.value)))
                     continue;
                 new_child_partsols.push(new_partsol);
             }
-            this.debug_log(2, "Culled", this.partsols_by_depth[this.current_depth].length - new_child_partsols.length, "partsols,", new_child_partsols.length, "remaining");
             this.partsols_by_depth[this.current_depth] = new_child_partsols;
-            base_partsol.last_deduction_update = base_partsol.deductions_made.length;
-            this.debug_log(1, 'Resuming depth-' + this.current_depth, 'search');
+            this.debug_log(1, "Resuming depth-" + this.current_depth, "search:", new_child_partsols.length, "partsols remaining");
             return;
         }
 
         let child_partsols = [];
+        let parent_partsols = this.partsols_by_depth[this.current_depth - 1];
         // Create partsols for all remaining variable/value pairs
-        for (let variable of this.variables) if (variable.value.length > 1) {
-            let values = variable.value.slice();
-            for (let value of values) {
-                let new_partsol = new PartialSolution(this, variable, value);
-                for (let v2 of values) if (v2 != value)
-                    new_partsol.deduct_queue.push({ variable, value: v2 });
+        for (let partsol of parent_partsols) {
+            for (let variable of this.variables) {
+                let values = partsol.values[variable.var_id].slice();
+                if (values.length == 1)
+                    continue;
+                for (let value of values) {
+                    let assumptions = partsol.assumptions.concat({ variable, value });
+                    if (child_partsols.some(ps => ps.assumptions.every(a => assumptions.some(b => a.variable == b.variable && a.value == b.value))))
+                        continue;
+                    let new_partsol = new PartialSolution(this, assumptions);
+                    if (this.current_depth == 1) {
+                        for (let v2 of values) if (v2 != value) {
+                            new_partsol.deduct_queue.push({ variable, value: v2 });
+                        }
+                    }
                     child_partsols.push(new_partsol);
+                }
             }
         }
         this.partsols_by_depth[this.current_depth] = child_partsols;
-        base_partsol.last_deduction_update = 0;
-        this.debug_log(1, 'Starting depth-' + this.current_depth, 'search');
+        this.debug_log(1, "Starting depth-" + this.current_depth, "search:", child_partsols.length, "partsols created");
     }
 
     /**
@@ -296,81 +304,66 @@ class Puzzle {
      * In fast mode, returns as soon as an agreement is found in one variable.
      */
     run_next_depth() {
-        let base_partsol = this.ps, old_partsol, new_partsol;
-        let var_partsols = [], current_partsols = this.partsols_by_depth[this.current_depth];
+        let base_partsol = this.ps, new_partsol;
+        let current_partsols = this.partsols_by_depth[this.current_depth];
         let success = false;
         for (let ps of current_partsols) ps.done = false;
         while (true) {
-            if (this.ps == base_partsol) {
-                old_partsol = current_partsols.shift();
-                if (old_partsol.done) {
-                    current_partsols.unshift(old_partsol);
-                    break;
-                }
-
-                new_partsol = new PartialSolution(this, old_partsol.variable, old_partsol.value);
-                new_partsol.deduct_queue = old_partsol.deduct_queue.slice();
-                for (let deduction of old_partsol.deductions_made) {
-                    new_partsol.try_deduction(deduction);
-                }
-                new_partsol.restore(true);
+            new_partsol = current_partsols.shift();
+            if (new_partsol.done) {
+                current_partsols.unshift(new_partsol);
+                break;
             }
 
-            let contradiction = false;
-            if ((this.options.mode == 'thorough' || this.ps.deduct_queue.length == 0) && this.ps.check_queue.length > 0) {
-                if (!this.next_check())
-                    contradiction = true;
-            }
-            else if ((this.options.mode == 'fast' || this.ps.check_queue.length == 0) && this.ps.deduct_queue.length > 0) {
-                if (!this.next_deduct())
-                    contradiction = true;
+            new_partsol.merge_from_parents();
+            new_partsol.restore(true);
+            this.simplify();
+
+            if (new_partsol.status == 'contradiction') {
+                // Could discard this child and add to parents' deduct queues
+                // This is technically redundant as the agreement check below
+                // will handle this case just fine, but might be useful to
+                // handle separately to save processing time
+                this.debug_log(2, () => ["Contradiction in {", new_partsol.assumptions.map(a => this.format_var(a.variable) + " => " + a.value).join("; "), "}"]);
             }
             else {
                 new_partsol.done = true;
-                base_partsol.restore(true);
-                this.debug_log(2, () => ["Done with", this.format_var(new_partsol.variable), "=>", new_partsol.value]);
-                var_partsols.push(new_partsol);
+                current_partsols.push(new_partsol);
+                this.debug_log(2, () => ["Done with {", new_partsol.assumptions.map(a => this.format_var(a.variable) + " => " + a.value).join("; "), "}"]);
             }
-            if (contradiction) {
-                // discard this child and add to the deduct queue
-                base_partsol.restore();
-                if (base_partsol.try_deduction(new_partsol)) {
-                    success = true;
-                    this.debug_log(2, () => ['Found new deduction:', this.format_var(new_partsol.variable), '=/>', new_partsol.value]);
-                }
-            }
-            if (this.ps == base_partsol && current_partsols[0].variable != new_partsol.variable) {
-                // agreement check
-                for (let deduction of PartialSolution.agreement(var_partsols).deductions_made) {
-                    if (this.ps.try_deduction(deduction)) {
+
+            for (let parent of new_partsol.parents) {
+                let variable = this.ps.assumptions.find(a => !parent.assumptions.some(b => a.variable == b.variable && a.value == b.value)).variable;
+                let valid_children = parent.children.filter(ps => ps.assumptions.some(a => a.variable == variable));
+                if (valid_children.every(ps => ps.done || ps.status == 'contradiction')) {
+                    if (parent.merge_from_children(valid_children))
                         success = true;
-                        this.debug_log(2, () => ['Agreement found in', this.format_var(new_partsol.variable) + ':', this.format_var(deduction.variable), '=/>', deduction.value]);
-                    }
                 }
-                
-                current_partsols.push(...var_partsols);
-                var_partsols = [];
-                if (success && this.options.mode == 'fast')
-                    return true;
+            }
+            
+            if (success && this.options.mode == 'fast') {
+                base_partsol.restore(true);
+                return true;
             }
         }
-        this.debug_log(1, 'Finished depth-' + this.current_depth, 'search');
+        base_partsol.restore(true);
+        this.debug_log(1, "Finished depth-" + this.current_depth, "search");
         return success;
     }
 
     check_if_done() {
         if (this.ps.status == 'contradiction') {
-            this.debug_log(0, 'Could not solve due to contradiction');
+            this.debug_log(0, "Could not solve due to contradiction");
             return true;
         }
         if (this.variables.every(v => v.value.length == 1 || !v.must_be_unique)) {
-            this.debug_log(0, 'Puzzle solved in', (new Date - this.start_time)/1000, 'seconds');
+            this.debug_log(0, "Puzzle solved in", (new Date - this.start_time)/1000, "seconds");
             this.ps.status = 'solved';
             return true;
         }
         if (this.options.max_depth <= 0) {
             this.ps.status = 'unsolvable';
-            this.debug_log(0, 'Could not solve with max depth', this.options.max_depth);
+            this.debug_log(0, "Could not solve with max depth", this.options.max_depth);
             return true;
         }
         return false;
@@ -378,30 +371,28 @@ class Puzzle {
 }
 
 class PartialSolution {
-    constructor(puzzle, variable, value) {
-        let ps;
-        if (puzzle instanceof PartialSolution) {
-            ps = puzzle;
-            puzzle = ps.puzzle;
-        }
+    constructor(puzzle, assumptions = []) {
         this.puzzle = puzzle;
-        this.depth = puzzle.ps ? puzzle.ps.depth + 1 : 0;
-        this.parent = ps || puzzle;
-        this.variable = variable;
-        this.value = value;
+        this.assumptions = assumptions;
+        this.depth = assumptions.length;
         this.status = 'partial';
 
         this.check_queue = [];
         this.deduct_queue = [];
         this.deductions_made = [];
-        this.prior_deductions = puzzle.ps ? puzzle.ps.prior_deductions.concat(puzzle.ps.deductions_made) : [];
-        this.last_base_update = this.prior_deductions.length;
-        this.assumptions = puzzle.ps ? puzzle.ps.assumptions.concat({ variable, value }) : [];
-        this.children = [];
 
         this.values = [];
         for (let variable of this.puzzle.variables)
             this.values.push(variable.value.slice());
+
+        this.parents = [];
+        this.children = [];
+        if (this.depth > 0) {
+            this.parents = puzzle.partsols_by_depth[this.depth - 1].filter(p => p.assumptions.every(a => assumptions.some(b => a.variable == b.variable && a.value == b.value)));
+            this.merge_from_parents();
+            for (let parent of this.parents)
+                parent.children.push(this);
+        }
     }
 
     save() {
@@ -420,6 +411,58 @@ class PartialSolution {
         this.puzzle.global_stats.total_context_switches++;
     }
 
+    debug_log() { let b = this.puzzle.ps; this.puzzle.ps = this; this.puzzle.debug_log(...arguments); this.puzzle.ps = b; }
+    format_var() { return this.puzzle.format_var(...arguments); }
+    format_con() { return this.puzzle.format_con(...arguments); }
+
+    merge_from_parents() {
+        let all_partsols = [...this.parents, this];
+        all_partsols.sort((a, b) => b.deductions_made.length - a.deductions_made.length);
+        let new_base = all_partsols.shift();
+        let deduct_lists = all_partsols.map(ps => ps.deductions_made.slice());
+
+        if (new_base != this) {
+            this.puzzle.global_stats.partsol_rebases++;
+            this.debug_log(3, () => ["Rebasing on {", new_base.assumptions.map(a => this.format_var(a.variable) + " => " + a.value).join("; ") || "root", "}"]);
+            this.deductions_made = new_base.deductions_made.slice();
+            this.values = new_base.values.map(v => v.slice());
+        }
+        
+        for (let list of deduct_lists)
+            for (let deduction of list)
+                this.try_deduction(deduction);
+    }
+
+    merge_from_children(children) {
+        let assumptions = children[0].assumptions.map(a => children.every(ps => ps.assumptions.some(b => a.variable == b.variable && a.value == b.value)) ? a : { variable: a.variable })
+        children = children.filter(ps => ps.status != 'contradiction');
+        if (children.length == 0) {
+            this.status = 'contradiction';
+            this.debug_log(2, () => ["Universal contradiction found in {", this.assumptions.map(a => this.format_var(a.variable) + " => " + a.value).join("; "), "}"]);
+            return true;
+        }
+        let deductions = children[0].deductions_made;
+        for (let i = 1; i < children.length; i++) {
+            let partsol = children[i];
+            let new_deductions = [];
+            for (let deduction of deductions) {
+                if (partsol.deductions_made.some(d => d.variable == deduction.variable && d.value == deduction.value))
+                    new_deductions.push(deduction);
+            }
+            deductions = new_deductions;
+        }
+        
+        let successful_deductions = [];
+        for (let deduction of deductions) {
+            if (this.try_deduction(deduction)) {
+                successful_deductions.push(deduction);
+            }
+        }
+        if (successful_deductions.length > 0)
+            this.debug_log(2, () => [successful_deductions.length, "agreements found in {", assumptions.map(a => this.format_var(a.variable) + (a.value == undefined ? "" : " => " + a.value)).join("; "), "}"]);
+        return successful_deductions.length > 0;
+    }
+
     /**
      * Attempts to apply a deduction; fails if the deduction already exists.
      * @param {{ variable: object, value: number|string}} deduction 
@@ -427,43 +470,13 @@ class PartialSolution {
      */
     try_deduction(deduction) {
         this.puzzle.global_stats.total_deduction_checks++;
-        if (this.deduct_queue.concat(this.deductions_made, this.prior_deductions).findIndex(d => d.variable == deduction.variable && d.value == deduction.value) == -1) {
+        if (!this.deduct_queue.concat(this.deductions_made).some(d => d.variable == deduction.variable && d.value == deduction.value)) {
             this.deduct_queue.push({ variable: deduction.variable, value: deduction.value, constraint: deduction.constraint });
             return true;
         }
         else {
             return false;
         }
-    }
-
-    /**
-     * Takes a group of PartialSolutions and finds the deductions all have in
-     * common.
-     * If only one input is given, returns it verbatim; otherwise creates a new
-     * PartialSolution with the correct .values and .deductions_made.
-     * @param  {...PartialSolution|PartialSolution[]} partsols 
-     * @returns PartialSolution with deductions agreed upon by all inputs
-     */
-    static agreement(...partsols) {
-        if (partsols.length == 1 && partsols[0] instanceof Array)
-            partsols = partsols[0];
-        if (partsols.length == 0)
-            throw new Error("PartialSolution.agreement must be at least one partial solution");
-        if (partsols.length == 1)
-            return partsols[0];
-
-        let init = partsols[0];
-        let result = new PartialSolution(init.parent);
-        result.deductions_made = init.deductions_made.map(d => ({ variable: d.variable, value: d.value }));
-        result.values = init.values.map(v => v.slice());
-        for (let partsol of partsols.slice(1))
-            for (let var_id in partsol.values)
-                for (let value of partsol.values[var_id])
-                    if (!result.values[var_id].includes(value)) {
-                        result.values[var_id].push(value);
-                        result.deductions_made.splice(result.deductions_made.findIndex(d => d.variable.var_id == var_id && d.value == value), 1);
-                    }
-        return result;
     }
 }
 

@@ -49,6 +49,7 @@ for (let type of puzzletypes) {
         return sa - sb;
     })
 }
+let overall_start_time = Date.now();
 let puzzle_stats = { total: 0, solved: 0 };
 function failPuzzle(name, reason) {
     if (!(reason in puzzle_stats))
@@ -102,11 +103,12 @@ for (let type of puzzletypes) {
         }
     }
 }
+let total_time = (Date.now() - overall_start_time) / 1000;
 if (puzzle_stats.total == puzzle_stats.solved)
-    console.log('Solved \x1b[32m' + puzzle_stats.solved + '/' + puzzle_stats.total, 'puzzles\x1b[0m');
+    console.log('Solved \x1b[32m' + puzzle_stats.solved + '/' + puzzle_stats.total, 'puzzles\x1b[0m in', total_time, 'sec');
 else {
     let fail_reasons = Object.keys(puzzle_stats).filter(x => x != 'total' && x != 'solved');
-    console.log('Solved \x1b[31m' + puzzle_stats.solved + '/' + puzzle_stats.total, 'puzzles\x1b[0m');
+    console.log('Solved \x1b[31m' + puzzle_stats.solved + '/' + puzzle_stats.total, 'puzzles\x1b[0m in', total_time, 'sec');
     for (let reason of fail_reasons) {
         let failed = puzzle_stats[reason];
         console.log('-', failed.length, reason);
