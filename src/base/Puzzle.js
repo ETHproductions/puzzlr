@@ -274,10 +274,15 @@ class Puzzle {
 
         let child_partsols = [];
         let parent_partsols = this.partsols_by_depth[this.current_depth - 1];
+        if (this.current_depth > 1) {
+            // Rotate partsols so lowest indexed variable is first
+            let first_index = parent_partsols.findIndex((ps, i) => ps.assumptions[0].variable.var_id > parent_partsols[(i + 1) % parent_partsols.length].assumptions[0].variable.var_id) + 1;
+            parent_partsols = parent_partsols.slice(first_index).concat(parent_partsols.slice(0, first_index));
+        }
         // Create partsols for all remaining variable/value pairs
         for (let partsol of parent_partsols) {
-            for (let variable of this.variables) {
-                let values = partsol.values[variable.var_id].slice();
+            for (let variable of this.variables.slice(this.current_depth == 1 ? 0 : partsol.assumptions.slice(-1)[0].variable.var_id + 1)){
+                let values = this.base_partsol.values[variable.var_id].slice();
                 if (values.length == 1)
                     continue;
                 for (let value of values) {
@@ -333,12 +338,8 @@ class Puzzle {
             }
 
             for (let parent of new_partsol.parents) {
-                let variable = this.ps.assumptions.find(a => !parent.assumptions.some(b => a.variable == b.variable && a.value == b.value)).variable;
-                let valid_children = parent.children.filter(ps => ps.assumptions.some(a => a.variable == variable));
-                if (valid_children.every(ps => ps.done || ps.status == 'contradiction')) {
-                    if (parent.merge_from_children(valid_children))
-                        success = true;
-                }
+                if (parent.merge_from_children(new_partsol.assumptions))
+                    success = true;
             }
             
             if (success && this.options.mode == 'fast') {
@@ -423,7 +424,7 @@ class PartialSolution {
 
         if (new_base != this) {
             this.puzzle.global_stats.partsol_rebases++;
-            this.debug_log(3, () => ["Rebasing on {", new_base.assumptions.map(a => this.format_var(a.variable) + " => " + a.value).join("; ") || "root", "}"]);
+            this.debug_log(2, () => ["Rebasing on {", new_base.assumptions.map(a => this.format_var(a.variable) + " => " + a.value).join("; ") || "root", "}"]);
             this.deductions_made = new_base.deductions_made.slice();
             this.values = new_base.values.map(v => v.slice());
         }
@@ -433,17 +434,25 @@ class PartialSolution {
                 this.try_deduction(deduction);
     }
 
-    merge_from_children(children) {
-        let assumptions = children[0].assumptions.map(a => children.every(ps => ps.assumptions.some(b => a.variable == b.variable && a.value == b.value)) ? a : { variable: a.variable })
-        children = children.filter(ps => ps.status != 'contradiction');
-        if (children.length == 0) {
+    merge_from_children(assumptions) {
+        let missing_variable = assumptions.find(a => !this.assumptions.some(b => a.variable == b.variable)).variable;
+        let valid_children = this.children.filter(ps => ps.assumptions.some(a => a.variable == missing_variable));
+        // Return early if a child hasn't finished running yet
+        if (!valid_children.every(ps => ps.done || ps.status == 'contradiction'))
+            return false;
+        
+        let shared_assumptions = assumptions.map(a => valid_children.every(ps => ps.assumptions.some(b => a.variable == b.variable && a.value == b.value)) ? a : { variable: a.variable });
+
+        valid_children = valid_children.filter(ps => ps.status != 'contradiction');
+        if (valid_children.length == 0) {
             this.status = 'contradiction';
             this.debug_log(2, () => ["Universal contradiction found in {", this.assumptions.map(a => this.format_var(a.variable) + " => " + a.value).join("; "), "}"]);
             return true;
         }
-        let deductions = children[0].deductions_made;
-        for (let i = 1; i < children.length; i++) {
-            let partsol = children[i];
+        
+        let deductions = valid_children[0].deductions_made;
+        for (let i = 1; i < valid_children.length; i++) {
+            let partsol = valid_children[i];
             let new_deductions = [];
             for (let deduction of deductions) {
                 if (partsol.deductions_made.some(d => d.variable == deduction.variable && d.value == deduction.value))
@@ -458,9 +467,21 @@ class PartialSolution {
                 successful_deductions.push(deduction);
             }
         }
-        if (successful_deductions.length > 0)
-            this.debug_log(2, () => [successful_deductions.length, "agreements found in {", assumptions.map(a => this.format_var(a.variable) + (a.value == undefined ? "" : " => " + a.value)).join("; "), "}"]);
-        return successful_deductions.length > 0;
+        if (successful_deductions.length > 0) {
+            this.debug_log(2, () => [successful_deductions.length, "agreements found in {", shared_assumptions.map(a => this.format_var(a.variable) + (a.value == undefined ? "" : " => " + a.value)).join("; "), "}"]);
+            let base_partsol = this.puzzle.ps;
+            this.restore(true);
+            this.puzzle.simplify();
+            base_partsol.restore(true);
+
+            let success = this.depth == 0;
+            for (let parent of this.parents) {
+                if (parent.merge_from_children(this.assumptions))
+                    success = true;
+            }
+            return success;
+        }
+        return false;
     }
 
     /**
