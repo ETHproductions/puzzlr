@@ -39,32 +39,22 @@ class YinYangPuzzle extends Puzzle {
         ));
 
         function BORDER_CONTIG(cells) {
-            let value_map = [];
-            for (let v of cells.slice(-1)[0].value)
-                value_map.push({ value: v, start: -1, end: -1 });
-            for (let i = 0; i < cells.length; i++) {
-                let {value} = cells[i];
-                if (value.length == 1) {
-                    let v = value_map.find(v => v.value == value[0]);
-                    if (!v) {
-                        v = { value: value[0], start: i, end: -1 }
-                        value_map.push(v);
+            let values = new Set([].concat(...cells.map(c => c.value)));
+            for (let v of values) {
+                let indices = cells.map(c => c.value == v ? 1 : c.value.includes(v) ? 0 : -1);
+                let index = indices.indexOf(1);
+                if (index == -1) continue;
+                indices = indices.slice(index).concat(indices.slice(0, index));
+                // If there is more than one pair of 1s with a -1 in between,
+                // this is an invalid border
+                let broken = false, can_break = false;
+                for (let i of indices) {
+                    if (i == 1) can_break = true;
+                    if (i == -1 && can_break) {
+                        if (broken) return false;
+                        broken = true;
+                        can_break = false;
                     }
-                    if (v.start != -1 && v.start < v.end)
-                        return false;
-                    if (v.end != -1)
-                        v.start = i;
-                }
-                let values_left = value.slice();
-                for (let v of value_map) {
-                    if (values_left.includes(v))
-                        values_left.splice(values_left.indexOf(v), 1);
-                    if (v.end == -1 && !value.includes(v.value)) {
-                        v.end = i;
-                    }
-                }
-                for (let v of values_left) {
-                    value_map.push({ value: v, start: -1, end: -1 });
                 }
             }
             return true;
@@ -77,7 +67,7 @@ class YinYangPuzzle extends Puzzle {
             let cellLoop = [];
             while (!foundEdges.has(nextEdge)) {
                 foundEdges.add(nextEdge);
-                for (let cell of nextVert.cells) if (cell != null && !cellLoop.includes(cell)) cellLoop.push(cell);
+                for (let cell of nextVert.cells.slice().reverse()) if (cell != null && !cellLoop.includes(cell)) cellLoop.push(cell);
                 nextEdge = nextVert.edges.find(e => e.isEdgeOfGrid && e != nextEdge);
                 nextVert = nextEdge.otherVert(nextVert);
             }
