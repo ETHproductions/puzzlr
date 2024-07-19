@@ -1,3 +1,5 @@
+import { renderGrid } from "./svg-render.js";
+
 document.getElementById("puzzfile").onchange = (e) => {
     let file = e.target.files[0];
     if (!file) return;
@@ -11,7 +13,6 @@ document.getElementById("puzzfile").onchange = (e) => {
             let puzzleData = JSON.parse(e.target.result);
             puzzleWorker.postMessage({ command: 'load', data: puzzleData });
             console.log('Data loaded.');
-            document.getElementById("solution").innerText = "Ready.";
             document.getElementById("button-solve").disabled = false;
         } catch (e) {
             console.log('Could not load data.');
@@ -31,8 +32,10 @@ const puzzleWorker = new Worker("web-solver.js");
 puzzleWorker.onmessage = e => {
     // console.log("Message received from child:", e.data);
     switch (e.data.status) {
-        case 'done':
         case 'ready':
+            console.log(e.data.puzzle)
+            renderGrid(JSON.parse(e.data.puzzle), 30);
+        case 'done':
         case 'update':
             document.getElementById("solution").innerText = e.data.output.replace(/ /g, '\xA0');
             break;
