@@ -106,3 +106,95 @@ export function CONTIG_EDGE_ALL(edges, target, start) {
     else return true;
 }
 CONTIG_EDGE_ALL.global = true;
+
+
+export function CONTIG_CELL_ALL(cells, target, start) {
+    // Strategy: run this check every time an cell has its value changed.
+
+    // If an cell had all non-target values removed, check to see if it is
+    // still connected to at least one other cell with only the target value
+    // (let's call this a "solid" cell).
+    // Works because all existing solid cells must have been validated already.
+    if (start.value == target) {
+        let found = new Set([start]);
+        let check_queue = [...start.adjacentEdge];
+        if (!cells.some(c => c.value == target && c != start)) return true;
+        
+        // This branch exists to rule out islands
+        while (check_queue.length > 0) {
+            let nextCell = check_queue.pop();
+            if (!cells.includes(nextCell)) continue;
+            if (found.has(nextCell)) continue;
+            if (!nextCell.value.includes(target)) continue;
+            if (nextCell.value == target) return true;
+            found.add(nextCell);
+            for (let otherCell of nextCell.adjacentEdge) {
+                if (!check_queue.includes(otherCell))
+                    check_queue.push(otherCell);
+            }
+        }
+        return false;
+    }
+
+    // If an cell had the target value removed, start at its adjacent and
+    // expand alternatingly until a connection is found between the branches.
+    else if (!start.value.includes(target)) {
+        //console.log('Starting at', start.var_id, target);
+        // Future work: this will run multiple times if there are multiple non-target values
+        let paths = start.adjacentEdge.map(c => ({ check_queue: [c], found: new Set() }));
+        let found_branch = false;
+
+        main:
+        while (true) {
+            //console.log(paths)
+            let { check_queue, found } = paths.shift();
+            //console.log(paths.length + 1, check_queue.slice(-1)[0]?.var_id, found_branch);
+            if (check_queue.length == 0) {
+                if ([...found].some(cell => cell.value == target)) {
+                    if (found_branch || paths.some(p => [...p.found].some(c => c.value == target))) {
+                        // there are 2 separate branches with solid cells
+                        return false;
+                    }
+                    else {
+                        // this is the first branch with solid cells
+                        found_branch = true;
+                    }
+                }
+                if (paths.length == 0) {
+                    // this was the last branch and it has no solid cells
+                    return true;
+                }
+                else {
+                    // no solid cells but there are branches remaining
+                    continue;
+                }
+            }
+            let nextCell = check_queue.pop();
+            if (cells.includes(nextCell) && !found.has(nextCell) && nextCell.value.includes(target)) {
+                for (let branch of paths) {
+                    if (branch.found.has(nextCell)) {
+                        //console.log('merging')
+                        // if all branches have merged then we're good
+                        if (paths.length == 1) return !found_branch;
+                        // merge the two branches
+                        for (let c of found)
+                            branch.found.add(c);
+                        for (let c of check_queue)
+                            if (!branch.check_queue.includes(c))
+                                branch.check_queue.push(c);
+                        continue main;
+                    }
+                }
+
+                found.add(nextCell);
+                for (let otherCell of nextCell.adjacentEdge) {
+                    if (!check_queue.includes(otherCell))
+                        check_queue.push(otherCell);
+                }
+            }
+            paths.push({ check_queue, found });
+        }
+    }
+    else return true;
+}
+CONTIG_CELL_ALL.global = true;

@@ -1,0 +1,13 @@
+{
+    "puzzle": {
+        "type": "yin-yang",
+        "grid": {
+            "type": "square",
+            "width": 3,
+            "height": 1
+        },
+        "task": [
+            [ 1,-1, 1]
+        ]
+    }
+}
