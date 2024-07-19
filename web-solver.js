@@ -1,6 +1,23 @@
 let formatPuzzle;
 import(`./src/base/basic-format.js`).then(data => formatPuzzle = data.formatFull);
 
+function puzzleToJSON(puzzle) {
+    console.log(puzzle)
+    let grid = {
+        verts: puzzle.grid.verts.map(v => ({ id: v.id, rpos: v.rpos })),
+        edges: puzzle.grid.edges.map(e => ({ id: e.id, fromVert: e.fromVert.id, toVert: e.toVert.id,
+            leftCell: e.leftCell?.id, rightCell: e.rightCell?.id, isEdgeOfGrid: e.isEdgeOfGrid })),
+        cells: puzzle.grid.cells.map(c => ({ id: c.id, area_id: c.area_id, verts: c.verts.map(v => v.id), edges: c.edges.map(e => e.id) }))
+    };
+
+    for (let type of ['verts', 'edges', 'cells'])
+        for (let o of puzzle.grid[type])
+            if ('value' in o)
+                grid[type][o.id].value = o.value;
+    
+    return JSON.stringify(grid);
+}
+
 let puzzleTypeCache = {};
 let puzzleData = null;
 let puzzleType = null;
@@ -30,7 +47,7 @@ function loadPuzzle(puzzle) {
     let finishedLoading = () => {
         puzzleType = puzzleTypeCache[type];
         livePuzzle = new puzzleType(puzzleData);
-        postMessage({ status: 'ready', output: "Ready.\n" + formatPuzzle(livePuzzle) });
+        postMessage({ status: 'ready', output: "Ready.\n" + formatPuzzle(livePuzzle), puzzle: puzzleToJSON(livePuzzle) });
     };
     
     puzzleData = puzzle;
