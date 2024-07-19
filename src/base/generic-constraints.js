@@ -139,16 +139,13 @@ export function CONTIG_CELL_ALL(cells, target, start) {
     // If an cell had the target value removed, start at its adjacent and
     // expand alternatingly until a connection is found between the branches.
     else if (!start.value.includes(target)) {
-        //console.log('Starting at', start.var_id, target);
         // Future work: this will run multiple times if there are multiple non-target values
         let paths = start.adjacentEdge.map(c => ({ check_queue: [c], found: new Set() }));
         let found_branch = false;
 
         main:
         while (true) {
-            //console.log(paths)
             let { check_queue, found } = paths.shift();
-            //console.log(paths.length + 1, check_queue.slice(-1)[0]?.var_id, found_branch);
             if (check_queue.length == 0) {
                 if ([...found].some(cell => cell.value == target)) {
                     if (found_branch || paths.some(p => [...p.found].some(c => c.value == target))) {
@@ -173,7 +170,6 @@ export function CONTIG_CELL_ALL(cells, target, start) {
             if (cells.includes(nextCell) && !found.has(nextCell) && nextCell.value.includes(target)) {
                 for (let branch of paths) {
                     if (branch.found.has(nextCell)) {
-                        //console.log('merging')
                         // if all branches have merged then we're good
                         if (paths.length == 1) return !found_branch;
                         // merge the two branches

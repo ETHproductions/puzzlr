@@ -81,7 +81,6 @@ class YinYangPuzzle extends Puzzle {
                 nextEdge = nextVert.edges.find(e => e.isEdgeOfGrid && e != nextEdge);
                 nextVert = nextEdge.otherVert(nextVert);
             }
-            //console.log(cellLoop);
             this.addConstraint(BORDER_CONTIG, cellLoop);
         }
     }

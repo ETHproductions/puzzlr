@@ -281,14 +281,12 @@ class Puzzle {
         }
         // Create partsols for all remaining variable/value pairs
         for (let partsol of parent_partsols) {
-            for (let variable of this.variables.slice(this.current_depth == 1 ? 0 : partsol.assumptions.slice(-1)[0].variable.var_id + 1)){
-                let values = this.base_partsol.values[variable.var_id].slice();
+            for (let variable of this.variables.slice(this.current_depth == 1 ? 0 : partsol.assumptions.slice(-1)[0].variable.var_id + 1)) {
+                let values = this.base_partsol.values[variable.var_id];
                 if (values.length == 1)
                     continue;
                 for (let value of values) {
                     let assumptions = partsol.assumptions.concat({ variable, value });
-                    if (child_partsols.some(ps => ps.assumptions.every(a => assumptions.some(b => a.variable == b.variable && a.value == b.value))))
-                        continue;
                     let new_partsol = new PartialSolution(this, assumptions);
                     if (this.current_depth == 1) {
                         for (let v2 of values) if (v2 != value) {
