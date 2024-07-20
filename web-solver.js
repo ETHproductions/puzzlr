@@ -1,6 +1,3 @@
-let formatPuzzle;
-import(`./src/base/basic-format.js`).then(data => formatPuzzle = data.formatFull);
-
 function puzzleToJSON(puzzle) {
     console.log(puzzle)
     let grid = {
@@ -35,8 +32,8 @@ onmessage = (e) => {
             options.mode = message.data;
             break;
         case 'load':
-            if (typeof message.data == 'object' && 'puzzle' in message.data)
-                loadPuzzle(message.data.puzzle);
+            if (typeof message.data == 'object' && 'type' in message.data)
+                loadPuzzle(message.data);
             else
                 postMessage({ status: 'invalid' });
             break;
@@ -50,11 +47,7 @@ function loadPuzzle(puzzle) {
     let finishedLoading = () => {
         puzzleType = puzzleTypeCache[type];
         livePuzzle = new puzzleType(puzzleData);
-        postMessage({ status: 'ready', puzzle: puzzleToJSON(livePuzzle), puzzleOptions: JSON.stringify({
-            scale: ['yin-yang'].includes(puzzle.type) ? 20 : 30,
-            hintsTop: puzzleData.sums ? puzzleData.sums.slice(0, puzzleData.grid.width) : null,
-            hintsLeft: puzzleData.sums ? puzzleData.sums.slice(puzzleData.grid.width) : null,
-        })});
+        postMessage({ status: 'ready' });
     };
     
     puzzleData = puzzle;
@@ -78,14 +71,13 @@ function runPuzzle() {
         if (new Date - last_update < 17) return;
         last_update = new Date;
         check_len = Math.max(check_len, ("" + livePuzzle.base_partsol.check_queue.length).length);
-        let output = "Running... (" + ("" + livePuzzle.base_partsol.check_queue.length).padStart(check_len, "\xA0") + " checks / " + livePuzzle.base_partsol.deduct_queue.length + " deducts / " + livePuzzle.base_partsol.children.length + " ps)\n" + formatPuzzle(livePuzzle);
+        let output = "Running... (" + ("" + livePuzzle.base_partsol.check_queue.length).padStart(check_len, "\xA0") + " checks / " + livePuzzle.base_partsol.deduct_queue.length + " deducts / " + livePuzzle.base_partsol.children.length + " ps)";
         postMessage({ status: 'update', output });
     };
     options.on_check();
     livePuzzle.solve();
     console.log(livePuzzle);
     let output = livePuzzle.base_partsol.status == 'solved' ? "Solved!" : livePuzzle.base_partsol.status == 'contradiction' ? "Contradiction found." : "Couldn't solve...";
-    output += ` (took ${ (Date.now() - start_time) / 1000 } seconds)\n`
-    output += formatPuzzle(livePuzzle);
+    output += ` (took ${ (Date.now() - start_time) / 1000 } seconds)`
     postMessage({ status: 'done', output });
 }

@@ -349,6 +349,11 @@ class GridCell {
         return this.adjacent.filter(c => c.type == 'vert').map(c => c.cell);
     }
 
+    get midpoint() {
+        let vertsX = this.verts.map(v => v.rpos.x), vertsY = this.verts.map(v => v.rpos.y);
+        return { x: (Math.min(...vertsX) + Math.max(...vertsX)) / 2, y: (Math.min(...vertsY) + Math.max(...vertsY)) / 2 };
+    }
+
     get type() {
         return 'cell';
     }

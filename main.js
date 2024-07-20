@@ -1,4 +1,9 @@
-import { renderGrid } from "./svg-render.js";
+import { RenderedGrid } from "./svg-render.js";
+
+const puzzleTypeCache = {};
+let puzzleData = null;
+let puzzleType = null;
+let livePuzzle = null;
 
 document.getElementById("puzzfile").onchange = (e) => {
     let file = e.target.files[0];
@@ -10,21 +15,47 @@ document.getElementById("puzzfile").onchange = (e) => {
     reader.readAsText(file, 'UTF-8');
     reader.onload = e => {
         try {
-            let puzzleData = JSON.parse(e.target.result);
-            puzzleWorker.postMessage({ command: 'load', data: puzzleData });
-            console.log('Data loaded.');
-            document.getElementById("button-solve").disabled = false;
+            puzzleData = JSON.parse(e.target.result).puzzle;
         } catch (e) {
             console.log('Could not load data.');
-            document.getElementById("solution").innerText = "No JSON data found";
+            return;
         }
+        
+        console.log(puzzleData)
+        let finishedLoading = () => {
+            puzzleType = puzzleTypeCache[type];
+            try {
+                livePuzzle = new puzzleType(puzzleData);
+                puzzleWorker.postMessage({ command: 'load', data: puzzleData });
+                console.log('Data loaded.');
+                console.log(livePuzzle)
+            } catch (e) {
+                console.log('Could not parse data.');
+                return;
+            }
+            document.getElementById("button-solve").disabled = false;
+            let puzzleOptions = {
+                scale: ['yin-yang', 'dominosa'].includes(puzzleData.type) ? 20 : 30,
+                hintsTop: puzzleData.sums ? puzzleData.sums.slice(0, puzzleData.grid.width) : null,
+                hintsLeft: puzzleData.sums ? puzzleData.sums.slice(puzzleData.grid.width) : null,
+            };
+            new RenderedGrid(livePuzzle.grid, puzzleOptions);
+        };
+            
+        let type = puzzleData.type;
+        if (type in puzzleTypeCache) finishedLoading();
+        else import(`./src/puzzles/${type}.js`).then(data => {
+            puzzleTypeCache[type] = data.default;
+            finishedLoading();
+        });
+        
     }
 };
 document.getElementById("solvemode").onclick = (e) => {
     puzzleWorker.postMessage({ command: 'changemode', data: e.target.value });
 };
 document.getElementById("button-solve").onclick = (e) => {
-    document.getElementById("solution").innerText = "Running...";
+    document.getElementById("status").innerText = "Running...";
     puzzleWorker.postMessage({ command: 'solve' });
 };
 
@@ -33,15 +64,14 @@ puzzleWorker.onmessage = e => {
     // console.log("Message received from child:", e.data);
     switch (e.data.status) {
         case 'ready':
-            console.log(e.data.puzzle)
-            renderGrid(JSON.parse(e.data.puzzle), JSON.parse(e.data.puzzleOptions));
+            document.getElementById("status").innerText = "Ready.";
             break;
-        case 'done':
         case 'update':
-            document.getElementById("solution").innerText = e.data.output.replace(/ /g, '\xA0');
+        case 'done':
+            document.getElementById("status").innerText = e.data.output;
             break;
         case 'invalid':
-            document.getElementById("solution").innerText = "Error processing puzzle";
+            document.getElementById("status").innerText = "Error processing puzzle";
             break;
     }
 };
