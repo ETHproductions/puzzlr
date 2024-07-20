@@ -10,10 +10,13 @@ function puzzleToJSON(puzzle) {
         cells: puzzle.grid.cells.map(c => ({ id: c.id, area_id: c.area_id, verts: c.verts.map(v => v.id), edges: c.edges.map(e => e.id) }))
     };
 
-    for (let type of ['verts', 'edges', 'cells'])
-        for (let o of puzzle.grid[type])
+    for (let type of ['verts', 'edges', 'cells']) {
+        for (let o of puzzle.grid[type]) {
             if ('value' in o)
                 grid[type][o.id].value = o.value;
+            grid[type][o.id].type = type.slice(0, -1);
+        }
+    }
     
     return JSON.stringify(grid);
 }
@@ -47,7 +50,11 @@ function loadPuzzle(puzzle) {
     let finishedLoading = () => {
         puzzleType = puzzleTypeCache[type];
         livePuzzle = new puzzleType(puzzleData);
-        postMessage({ status: 'ready', output: "Ready.\n" + formatPuzzle(livePuzzle), puzzle: puzzleToJSON(livePuzzle) });
+        postMessage({ status: 'ready', puzzle: puzzleToJSON(livePuzzle), puzzleOptions: JSON.stringify({
+            scale: ['yin-yang'].includes(puzzle.type) ? 20 : 30,
+            hintsTop: puzzleData.sums ? puzzleData.sums.slice(0, puzzleData.grid.width) : null,
+            hintsLeft: puzzleData.sums ? puzzleData.sums.slice(puzzleData.grid.width) : null,
+        })});
     };
     
     puzzleData = puzzle;
