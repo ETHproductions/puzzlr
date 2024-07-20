@@ -34,7 +34,8 @@ puzzleWorker.onmessage = e => {
     switch (e.data.status) {
         case 'ready':
             console.log(e.data.puzzle)
-            renderGrid(JSON.parse(e.data.puzzle), 30);
+            renderGrid(JSON.parse(e.data.puzzle), JSON.parse(e.data.puzzleOptions));
+            break;
         case 'done':
         case 'update':
             document.getElementById("solution").innerText = e.data.output.replace(/ /g, '\xA0');
