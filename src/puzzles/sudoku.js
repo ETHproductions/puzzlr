@@ -26,6 +26,8 @@ class SudokuPuzzle extends Puzzle {
         }
         this.grid.cellmap.map((cell, {x, y}) => {
             let hint = task[y][x];
+            if (hint && hint != -1)
+                cell.hint = hint;
             this.addVariable(cell, hint && hint != -1 ? [ parseInt(hint, 36) ] : values.slice());
             areas[(x / boxwidth | 0) + boxheight * (y / boxheight | 0)].push(cell);
         });

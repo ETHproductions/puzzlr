@@ -9,8 +9,8 @@ class DominosaPuzzle extends Puzzle {
 
         let maxNum = 0;
         this.grid.cellmap.map((cell, {x, y}) => {
-            cell.value = task[y][x];
-            if (cell.value > maxNum) maxNum = cell.value;
+            cell.hint = task[y][x];
+            if (cell.hint > maxNum) maxNum = cell.hint;
         });
         this.uniqueDominoes = {};
         for (let i = 0; i <= maxNum; i++) {
@@ -22,7 +22,7 @@ class DominosaPuzzle extends Puzzle {
             if (!edge.leftCell || !edge.rightCell) continue;
             this.addVariable(edge, [0, 1]);
             
-            let id = [edge.leftCell.value, edge.rightCell.value];
+            let id = [edge.leftCell.hint, edge.rightCell.hint];
             if (id[0] > id[1]) id.reverse();
             this.uniqueDominoes[id].push(edge);
         }

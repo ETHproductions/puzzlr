@@ -11,6 +11,7 @@ class YinYangPuzzle extends Puzzle {
 
         this.grid.cellmap.map((cell, {x, y}) => {
             let hint = task[y][x];
+            if (hint != -1) cell.hint = hint;
             this.addVariable(cell, hint != -1 ? [hint] : [0, 1]);
         });
         

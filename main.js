@@ -4,6 +4,7 @@ const puzzleTypeCache = {};
 let puzzleData = null;
 let puzzleType = null;
 let livePuzzle = null;
+let renderedGrid = null;
 
 document.getElementById("puzzfile").onchange = (e) => {
     let file = e.target.files[0];
@@ -35,11 +36,11 @@ document.getElementById("puzzfile").onchange = (e) => {
             }
             document.getElementById("button-solve").disabled = false;
             let puzzleOptions = {
-                scale: ['yin-yang', 'dominosa'].includes(puzzleData.type) ? 20 : 30,
+                scale: ['yin-yang', 'dominosa'].includes(puzzleData.type) ? 20 : ['sudoku'].includes(puzzleData.type) ? 40 : 30,
                 hintsTop: puzzleData.sums ? puzzleData.sums.slice(0, puzzleData.grid.width) : null,
                 hintsLeft: puzzleData.sums ? puzzleData.sums.slice(puzzleData.grid.width) : null,
             };
-            new RenderedGrid(livePuzzle.grid, puzzleOptions);
+            renderedGrid = new RenderedGrid(livePuzzle, puzzleOptions);
         };
             
         let type = puzzleData.type;
@@ -68,6 +69,10 @@ puzzleWorker.onmessage = e => {
             break;
         case 'update':
         case 'done':
+            e.data.answer.forEach((v, i) => {
+                livePuzzle.variables[i].value = v;
+            });
+            renderedGrid.renderPuzzle();
             document.getElementById("status").innerText = e.data.output;
             break;
         case 'invalid':
