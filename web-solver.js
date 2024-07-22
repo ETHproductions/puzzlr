@@ -1,23 +1,3 @@
-function puzzleToJSON(puzzle) {
-    console.log(puzzle)
-    let grid = {
-        verts: puzzle.grid.verts.map(v => ({ id: v.id, rpos: v.rpos })),
-        edges: puzzle.grid.edges.map(e => ({ id: e.id, fromVert: e.fromVert.id, toVert: e.toVert.id,
-            leftCell: e.leftCell?.id, rightCell: e.rightCell?.id, isEdgeOfGrid: e.isEdgeOfGrid })),
-        cells: puzzle.grid.cells.map(c => ({ id: c.id, area_id: c.area_id, verts: c.verts.map(v => v.id), edges: c.edges.map(e => e.id) }))
-    };
-
-    for (let type of ['verts', 'edges', 'cells']) {
-        for (let o of puzzle.grid[type]) {
-            if ('value' in o)
-                grid[type][o.id].value = o.value;
-            grid[type][o.id].type = type.slice(0, -1);
-        }
-    }
-    
-    return JSON.stringify(grid);
-}
-
 let puzzleTypeCache = {};
 let puzzleData = null;
 let puzzleType = null;
@@ -68,16 +48,16 @@ function runPuzzle() {
     livePuzzle.initiate_solve(options);
     let last_update = 0, check_len = 1, start_time = Date.now();
     options.on_check = (v) => {
-        if (new Date - last_update < 17) return;
+        if (new Date - last_update < 50) return;
         last_update = new Date;
         check_len = Math.max(check_len, ("" + livePuzzle.base_partsol.check_queue.length).length);
         let output = "Running... (" + ("" + livePuzzle.base_partsol.check_queue.length).padStart(check_len, "\xA0") + " checks / " + livePuzzle.base_partsol.deduct_queue.length + " deducts / " + livePuzzle.base_partsol.children.length + " ps)";
-        postMessage({ status: 'update', output });
+        postMessage({ status: 'update', output, answer: livePuzzle.variables.map(v => v.value) });
     };
     options.on_check();
     livePuzzle.solve();
     console.log(livePuzzle);
     let output = livePuzzle.base_partsol.status == 'solved' ? "Solved!" : livePuzzle.base_partsol.status == 'contradiction' ? "Contradiction found." : "Couldn't solve...";
     output += ` (took ${ (Date.now() - start_time) / 1000 } seconds)`
-    postMessage({ status: 'done', output });
+    postMessage({ status: 'done', output, answer: livePuzzle.variables.map(v => v.value) });
 }
