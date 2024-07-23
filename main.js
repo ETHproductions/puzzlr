@@ -36,7 +36,7 @@ document.getElementById("puzzfile").onchange = (e) => {
             }
             document.getElementById("button-solve").disabled = false;
             let puzzleOptions = {
-                scale: ['yin-yang', 'dominosa'].includes(puzzleData.type) ? 20 : ['sudoku'].includes(puzzleData.type) ? 40 : 30,
+                scale: ['yin-yang', 'dominosa', 'slitherlink'].includes(puzzleData.type) ? 20 : ['sudoku'].includes(puzzleData.type) ? 40 : 30,
                 hintsTop: puzzleData.sums ? puzzleData.sums.slice(0, puzzleData.grid.width) : null,
                 hintsLeft: puzzleData.sums ? puzzleData.sums.slice(puzzleData.grid.width) : null,
             };
