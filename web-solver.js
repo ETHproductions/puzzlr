@@ -51,7 +51,7 @@ function runPuzzle() {
         if (new Date - last_update < 50) return;
         last_update = new Date;
         check_len = Math.max(check_len, ("" + livePuzzle.base_partsol.check_queue.length).length);
-        let output = "Running... (" + ("" + livePuzzle.base_partsol.check_queue.length).padStart(check_len, "\xA0") + " checks / " + livePuzzle.base_partsol.deduct_queue.length + " deducts / " + livePuzzle.base_partsol.children.length + " ps)";
+        let output = "Running... (" + livePuzzle.base_partsol.check_queue.length + " checks / " + livePuzzle.base_partsol.deduct_queue.length + " deducts / " + livePuzzle.partsols_by_depth.slice(-1)[0].length + " ps)";
         postMessage({ status: 'update', output, answer: livePuzzle.variables.map(v => v.value) });
     };
     options.on_check();

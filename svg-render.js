@@ -136,6 +136,7 @@ export class RenderedGrid {
             "stitches": ["edgestitch", "stitchhole"],
             "slitherlink": ["numhint", "edgedraw"],
             "dominosa": ["numhint", "edgedomino"],
+            "thermometers": ["edgeplain", "binarythermo"],
         }[this.puzzle.type] || ["edgearea", "binarygrey"];
 
         let edgefuncs = renderfuncs.map(f => this.renderElements.edge[f]).filter(f => f);
@@ -194,6 +195,17 @@ export class RenderedGrid {
 
     renderElements = {
         edge: {
+            "edgeplain": (edge) => {
+                return this.createSVGElement("line", svg.edgesBase, {
+                    "stroke": "black",
+                    "stroke-width": edge.isEdgeOfGrid ? 3 : 1,
+                    "stroke-linecap": "square",
+                    "x1": this.convertX(edge.fromVert.rpos.x),
+                    "y1": this.convertY(edge.fromVert.rpos.y),
+                    "x2": this.convertX(edge.toVert.rpos.x),
+                    "y2": this.convertY(edge.toVert.rpos.y)
+                });
+            },
             "edgearea": (edge) => {
                 return this.createSVGElement("line", svg.edgesBase, {
                     "stroke": "black",
@@ -280,13 +292,13 @@ export class RenderedGrid {
             "numhint": (cell) => {
                 if (cell.hint === undefined || cell.hint == -1) return;
                 let { x, y } = cell.midpoint;
-                return this.addHint(cell.hint, this.convertX(x), this.convertY(y));
+                return this.addHint(cell.hint, this.convertX(x), this.convertY(y), "#000", this.scale / 1.5);
             },
             "sudoku": (cell) => {
                 if (cell.hint !== undefined && cell.hint != -1) return;
                 let { x, y } = cell.midpoint;
                 if (cell.value.length == 1) {
-                    return this.addHint(cell.value[0].toString(36).toUpperCase(), this.convertX(x), this.convertY(y), "#60B");
+                    return this.addHint(cell.value[0].toString(36).toUpperCase(), this.convertX(x), this.convertY(y), "#60B", this.scale / 1.5);
                 }
                 let maxvals = this.grid.width;
                 let numacross = Math.ceil(maxvals ** 0.5);
@@ -337,6 +349,79 @@ export class RenderedGrid {
                         })
                     ];
                 }
+            },
+            "binarythermo": (cell) => {
+                let prevCell = cell.adjacentEdge.find(c => c.area_id == cell.area_id && c.thermoIndex == cell.thermoIndex - 1);
+                let nextCell = cell.adjacentEdge.find(c => c.area_id == cell.area_id && c.thermoIndex == cell.thermoIndex + 1);
+                let prevDir = prevCell ? prevCell.vpos.x > cell.vpos.x ? 0 : prevCell.vpos.y > cell.vpos.y ? 1 : prevCell.vpos.x < cell.vpos.x ? 2 : 3 : -1;
+                let nextDir = nextCell ? nextCell.vpos.x > cell.vpos.x ? 0 : nextCell.vpos.y > cell.vpos.y ? 1 : nextCell.vpos.x < cell.vpos.x ? 2 : 3 : -1;
+                
+                let dir1 = prevDir == -1 ? nextDir : prevDir;
+                let dir2 = prevDir == -1 ? -1 : nextDir == -1 ? -2 : nextDir;
+
+                let mid = cell.midpoint;
+
+                const tw = 0.16;
+                const fill = cell.value == 1 ? "#D03" : cell.value == 0 ? "#FFF" : "#CCC";
+                const stroke = "#333";
+
+                if (dir2 >= 0 && Math.abs(dir1 - dir2) == 2) {
+                    let p = [
+                        [0.5, -tw], [-0.5, -tw], [-0.5, tw], [0.5, tw]
+                    ].map(a => [
+                        this.convertX(mid.x + a[dir1 % 2] * [1,-1,-1,1][dir1]),
+                        this.convertY(mid.y + a[dir1 % 2 ^ 1] * [1,1,-1,-1][dir1])
+                    ]);
+                    return [
+                        this.createSVGElement("path", svg.answerGroup, {
+                            "fill": fill,
+                            "d": p.map((a, i) => (i == 0 ? "M " : "L ") + a).join(" ") + " Z"
+                        }),
+                        this.createSVGElement("path", svg.answerGroup, {
+                            "stroke": stroke,
+                            "stroke-width": 2,
+                            "d": p.map((a, i) => (i % 2 == 0 ? "M " : "L ") + a).join(" ")
+                        }),
+                    ];
+                }
+                if (dir2 < 0) {
+                    const bw = dir2 == -2 ? 0 : 0.2;
+                    const bl = dir2 == -2 ? tw : tw + 0.1;
+                    let p = [
+                        [0.5, -tw], [bw, -tw], [bw, tw], [0.5, tw]
+                    ].map(a => [
+                        this.convertX(mid.x + a[dir1 % 2] * [1,-1,-1,1][dir1]),
+                        this.convertY(mid.y + a[dir1 % 2 ^ 1] * [1,1,-1,-1][dir1])
+                    ]);
+
+                    return this.createSVGElement("path", svg.answerGroup, {
+                        "fill": fill,
+                        "stroke": stroke,
+                        "stroke-width": 2,
+                        "d": `M ${ p[0] } L ${ p[1] } A ${ bl * this.scale } ${ bl * this.scale } 0 1 0 ${ p[2] } L ${ p[3] }`
+                    });
+                }
+                
+                let dir = Math.abs(dir1 - dir2) == 3 ? 3 : Math.min(dir1, dir2);
+                let p = [
+                    [0.5, -tw], [0, -tw], [-tw, 0], [-tw, 0.5], [tw, 0.5], [tw, tw], [0.5, tw]
+                ].map(a => [
+                    this.convertX(mid.x + a[dir % 2] * [1,-1,-1,1][dir]),
+                    this.convertY(mid.y + a[dir % 2 ^ 1] * [1,1,-1,-1][dir])
+                ]);
+
+                return [
+                    this.createSVGElement("path", svg.answerGroup, {
+                        "fill": fill,
+                        "d": `M ${ p[0] } L ${ p[1] } A ${ tw * this.scale } ${ tw * this.scale } 0 0 0 ${ p[2] } L ${ p[3] } L ${ p[4] } L ${ p[5] } L ${ p[6] }`
+                    }),
+                    this.createSVGElement("path", svg.answerGroup, {
+                        "fill": "transparent",
+                        "stroke": stroke,
+                        "stroke-width": 2,
+                        "d": `M ${ p[0] } L ${ p[1] } A ${ tw * this.scale } ${ tw * this.scale } 0 0 0 ${ p[2] } L ${ p[3] } M ${ p[4] } L ${ p[5] } L ${ p[6] }`
+                    })
+                ]
             }
         }
     };
