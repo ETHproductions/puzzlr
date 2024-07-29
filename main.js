@@ -6,10 +6,13 @@ let puzzleType = null;
 let livePuzzle = null;
 let renderedGrid = null;
 
+const solveButton = document.getElementById("button-solve");
+const statusText = document.getElementById("status");
+
 document.getElementById("puzzfile").onchange = (e) => {
     let file = e.target.files[0];
     if (!file) return;
-    document.getElementById("button-solve").disabled = true;
+    solveButton.disabled = true;
     console.log('Reading data from', file.name);
 
     let reader = new FileReader();
@@ -18,6 +21,7 @@ document.getElementById("puzzfile").onchange = (e) => {
         try {
             puzzleData = JSON.parse(e.target.result).puzzle;
         } catch (e) {
+            statusText.innerText = "Could not load JSON data.";
             console.log('Could not load data.');
             return;
         }
@@ -29,12 +33,12 @@ document.getElementById("puzzfile").onchange = (e) => {
                 livePuzzle = new puzzleType(puzzleData);
                 puzzleWorker.postMessage({ command: 'load', data: puzzleData });
                 console.log('Data loaded.');
-                console.log(livePuzzle)
             } catch (e) {
+                statusText.innerText = "Could not parse puzzle data.";
                 console.log('Could not parse data.');
                 return;
             }
-            document.getElementById("button-solve").disabled = false;
+            solveButton.disabled = false;
             let puzzleOptions = {
                 scale: ['yin-yang', 'dominosa', 'slitherlink'].includes(puzzleData.type) ? 20 : ['sudoku'].includes(puzzleData.type) ? 40 : 30,
                 hintsTop: puzzleData.sums ? puzzleData.sums.slice(0, puzzleData.grid.width) : null,
@@ -55,8 +59,8 @@ document.getElementById("puzzfile").onchange = (e) => {
 document.getElementById("solvemode").onclick = (e) => {
     puzzleWorker.postMessage({ command: 'changemode', data: e.target.value });
 };
-document.getElementById("button-solve").onclick = (e) => {
-    document.getElementById("status").innerText = "Running...";
+solveButton.onclick = (e) => {
+    statusText.innerText = "Running...";
     puzzleWorker.postMessage({ command: 'solve' });
 };
 
@@ -65,7 +69,7 @@ puzzleWorker.onmessage = e => {
     // console.log("Message received from child:", e.data);
     switch (e.data.status) {
         case 'ready':
-            document.getElementById("status").innerText = "Ready.";
+            statusText.innerText = "Ready.";
             break;
         case 'update':
         case 'done':
@@ -73,10 +77,10 @@ puzzleWorker.onmessage = e => {
                 livePuzzle.variables[i].value = v;
             });
             renderedGrid.renderPuzzle();
-            document.getElementById("status").innerText = e.data.output;
+            statusText.innerText = e.data.output;
             break;
         case 'invalid':
-            document.getElementById("status").innerText = "Error processing puzzle";
+            statusText.innerText = "Error processing puzzle";
             break;
     }
 };
