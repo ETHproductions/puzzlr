@@ -22,16 +22,10 @@ export class RenderedGrid {
         this.minX = minX, this.maxX = maxX;
         this.minY = minY, this.maxY = maxY;
 
-        let width  = (maxX - minX + 1) * scale,
-            height = (maxY - minY + 1) * scale;
-
-        let originX =  width / 2 - (minX + maxX) / 2 * scale,
-            originY = height / 2 - (minY + maxY) / 2 * scale;
-
-        if (options.hintsLeft) width += scale, originX += scale;
-        if (options.hintsRight) width += scale;
-        if (options.hintsTop) height += scale, originY += scale;
-        if (options.hintsBottom) height += scale;
+        const width  = (maxX - minX + 3) * scale;
+        const height = (maxY - minY + 3) * scale;
+        const originX =  width / 2 - (minX + maxX) / 2 * scale;
+        const originY = height / 2 - (minY + maxY) / 2 * scale;
 
         this.width = width, this.height = height;
         this.originX = originX, this.originY = originY;
@@ -55,6 +49,7 @@ export class RenderedGrid {
         svg.answerGroup.setAttribute("id", "answer");
         svg.appendChild(svg.answerGroup);
 
+        /* hitboxes for mouse detection. will need for editor functionality
         svg.cellsHitbox = document.createElementNS(ns, "g");
         svg.cellsHitbox.setAttribute("id", "cells-hitbox");
         svg.appendChild(svg.cellsHitbox);
@@ -63,7 +58,6 @@ export class RenderedGrid {
         svg.edgesHitbox.setAttribute("id", "edges-hitbox");
         svg.appendChild(svg.edgesHitbox);
 
-        /*
         for (let cell of grid.cells) {
             let hitbox = this.createSVGElement("path", svg.cellsBase, {
                 "fill": "transparent",
@@ -91,38 +85,18 @@ export class RenderedGrid {
         }
         */
 
-        if (options.hintsLeft) {
-            let x = originX + (minX - 0.5) * scale;
-            let y = originY + (minY + 0.5) * scale;
-            for (let hint of options.hintsLeft) {
-                if (hint != -1) this.addHint(hint, x, y);
-                y += scale;
+        const addEdgeHints = (hints, x, y, dir) => {
+            if (!hints) return;
+            for (let hint of hints) {
+                if (hint > -1) this.addHint(hint, this.convertX(x), this.convertY(y));
+                dir ? y += 1 : x += 1;
             }
         }
-        if (options.hintsRight) {
-            let x = originX + (maxX + 0.5) * scale;
-            let y = originY + (minY + 0.5) * scale;
-            for (let hint of options.hintsRight) {
-                if (hint != -1) this.addHint(hint, x, y);
-                y += scale;
-            }
-        }
-        if (options.hintsTop) {
-            let x = originX + (minX + 0.5) * scale;
-            let y = originY + (minY - 0.5) * scale;
-            for (let hint of options.hintsTop) {
-                if (hint != -1) this.addHint(hint, x, y);
-                x += scale;
-            }
-        }
-        if (options.hintsBottom) {
-            let x = originX + (minX + 0.5) * scale;
-            let y = originY + (maxY + 0.5) * scale;
-            for (let hint of options.hintsTop) {
-                if (hint != -1) this.addHint(hint, x, y);
-                x += scale;
-            }
-        }
+
+        addEdgeHints(options.hintsLeft, minX - 0.5, minY + 0.5, 1);
+        addEdgeHints(options.hintsRight, maxX + 0.5, minY + 0.5, 1);
+        addEdgeHints(options.hintsTop, minX + 0.5, minY - 0.5, 0);
+        addEdgeHints(options.hintsBottom, minX + 0.5, maxY + 0.5, 0);
 
         this.edgecache = [];
         this.cellcache = [];
@@ -257,7 +231,7 @@ export class RenderedGrid {
         
                     elems.push(this.createSVGElement("line", svg.answerGroup, {
                         "stroke": "black",
-                        "stroke-width": 5,
+                        "stroke-width": this.scale / 6,
                         "stroke-linecap": "round",
                         "x1": this.convertX(mid1.x),
                         "y1": this.convertY(mid1.y),
@@ -320,7 +294,7 @@ export class RenderedGrid {
                     
                     return this.createSVGElement("circle", svg.answerGroup, {
                         "stroke": "black",
-                        "stroke-width": 4,
+                        "stroke-width": this.scale / 7,
                         "fill": "transparent",
                         "cx": this.convertX(mid.x),
                         "cy": this.convertY(mid.y),
@@ -355,60 +329,65 @@ export class RenderedGrid {
                 let nextCell = cell.adjacentEdge.find(c => c.area_id == cell.area_id && c.thermoIndex == cell.thermoIndex + 1);
                 let prevDir = prevCell ? prevCell.vpos.x > cell.vpos.x ? 0 : prevCell.vpos.y > cell.vpos.y ? 1 : prevCell.vpos.x < cell.vpos.x ? 2 : 3 : -1;
                 let nextDir = nextCell ? nextCell.vpos.x > cell.vpos.x ? 0 : nextCell.vpos.y > cell.vpos.y ? 1 : nextCell.vpos.x < cell.vpos.x ? 2 : 3 : -1;
+                // 0 -> right, 1 -> down, 2 -> left, 3 -> up, -1 -> none
                 
+                // each cell will have at least one direction (in or out) so
+                // let's make sure that's always known as dir1
                 let dir1 = prevDir == -1 ? nextDir : prevDir;
+                // dir2 will just be the other direction if there is one;
+                // if not, -1 represents start of thermo, -2 is end of thermo
                 let dir2 = prevDir == -1 ? -1 : nextDir == -1 ? -2 : nextDir;
 
                 let mid = cell.midpoint;
+                const xyConversion = a => [
+                    this.convertX(mid.x + a[dir1 % 2] * [1,-1,-1,1][dir1]),
+                    this.convertY(mid.y + a[dir1 % 2 ^ 1] * [1,1,-1,-1][dir1])
+                ];
 
-                const tw = 0.16;
-                const fill = cell.value == 1 ? "#D03" : cell.value == 0 ? "#FFF" : "#CCC";
+                const tw = 0.16; // thermo width, as ratio of cell width from center to edge of thermo
+                const fill = cell.value == 1 ? "#D14" : cell.value == 0 ? "#FFF" : "#CCC";
                 const stroke = "#333";
 
+                // simplest case first: straight line (2 cases)
                 if (dir2 >= 0 && Math.abs(dir1 - dir2) == 2) {
-                    let p = [
-                        [0.5, -tw], [-0.5, -tw], [-0.5, tw], [0.5, tw]
-                    ].map(a => [
-                        this.convertX(mid.x + a[dir1 % 2] * [1,-1,-1,1][dir1]),
-                        this.convertY(mid.y + a[dir1 % 2 ^ 1] * [1,1,-1,-1][dir1])
-                    ]);
+                    let p = [ [0.5, -tw], [-0.5, -tw], [-0.5, tw], [0.5, tw] ].map(xyConversion);
                     return [
                         this.createSVGElement("path", svg.answerGroup, {
                             "fill": fill,
-                            "d": p.map((a, i) => (i == 0 ? "M " : "L ") + a).join(" ") + " Z"
+                            "d": `M ${ p[0] } L ${ p[1] } L ${ p[2] } L ${ p[3] } Z`,
                         }),
                         this.createSVGElement("path", svg.answerGroup, {
                             "stroke": stroke,
                             "stroke-width": 2,
-                            "d": p.map((a, i) => (i % 2 == 0 ? "M " : "L ") + a).join(" ")
+                            "d": `M ${ p[0] } L ${ p[1] } M ${ p[2] } L ${ p[3] }`,
                         }),
                     ];
                 }
+
+                // now for the thermo ends (4 directions, 2 sizes)
                 if (dir2 < 0) {
-                    const bw = dir2 == -2 ? 0 : 0.2;
-                    const bl = dir2 == -2 ? tw : tw + 0.1;
-                    let p = [
-                        [0.5, -tw], [bw, -tw], [bw, tw], [0.5, tw]
-                    ].map(a => [
-                        this.convertX(mid.x + a[dir1 % 2] * [1,-1,-1,1][dir1]),
-                        this.convertY(mid.y + a[dir1 % 2 ^ 1] * [1,1,-1,-1][dir1])
-                    ]);
+                    const bw = dir2 == -2 ? tw : tw + 0.12; // bulb width
+                    const bo = (bw ** 2 - tw ** 2) ** 0.5; // bulb offset of intersection
+                    let p = [ [0.5, -tw], [bo, -tw], [bo, tw], [0.5, tw] ].map(xyConversion);
 
                     return this.createSVGElement("path", svg.answerGroup, {
                         "fill": fill,
                         "stroke": stroke,
                         "stroke-width": 2,
-                        "d": `M ${ p[0] } L ${ p[1] } A ${ bl * this.scale } ${ bl * this.scale } 0 1 0 ${ p[2] } L ${ p[3] }`
+                        "d": `M ${ p[0] } L ${ p[1] } A ${ bw * this.scale } ${ bw * this.scale } 0 1 0 ${ p[2] } L ${ p[3] }`
                     });
                 }
                 
-                let dir = Math.abs(dir1 - dir2) == 3 ? 3 : Math.min(dir1, dir2);
-                let p = [
-                    [0.5, -tw], [0, -tw], [-tw, 0], [-tw, 0.5], [tw, 0.5], [tw, tw], [0.5, tw]
-                ].map(a => [
-                    this.convertX(mid.x + a[dir % 2] * [1,-1,-1,1][dir]),
-                    this.convertY(mid.y + a[dir % 2 ^ 1] * [1,1,-1,-1][dir])
-                ]);
+                // finally we take care of the most complex shape: curves
+                // need to be very careful which direction it turns:
+                //   [0, 1], [1, 0] -> bottom-right
+                //   [1, 2], [2, 1] -> bottom-left
+                //   [2, 3], [3, 2] -> top-left
+                //   [3, 0], [0, 3] -> top-right
+                // we convert these into a single number 0-3 in this order
+                dir1 = Math.abs(dir1 - dir2) == 3 ? 3 : Math.min(dir1, dir2);
+                
+                let p = [ [0.5, -tw], [0, -tw], [-tw, 0], [-tw, 0.5], [tw, 0.5], [tw, tw], [0.5, tw] ].map(xyConversion);
 
                 return [
                     this.createSVGElement("path", svg.answerGroup, {
