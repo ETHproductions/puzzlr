@@ -4,6 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class ThermometersPuzzle extends Puzzle {
     get type() { return 'thermometers'; }
+    get renderSettings() { return { defaultScale: 30, funcs: ["edgeplain", "binarythermo"] }; }
     constructor({ thermometers, sums }) {
         super(SquareGrid.fromAreas(thermometers));
         if (this.grid.width + this.grid.height != sums.length)

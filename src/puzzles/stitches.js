@@ -4,6 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class StitchesPuzzle extends Puzzle {
     get type() { return 'stitches'; }
+    get renderSettings() { return { defaultScale: 30, funcs: ["edgestitch", "stitchhole"] }; }
     constructor({ stitch_count, areas, sums }) {
         super(SquareGrid.fromAreas(areas));
         if (this.grid.width + this.grid.height != sums.length)

@@ -4,6 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class NorinoriPuzzle extends Puzzle {
     get type() { return 'norinori'; }
+    get renderSettings() { return { defaultScale: 30, funcs: ["edgearea", "binarygrey"] }; }
     constructor({ areas }) {
         super(SquareGrid.fromAreas(areas));
         this.areas = areas;

@@ -4,6 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class SlitherlinkPuzzle extends Puzzle {
     get type() { return 'slitherlink'; }
+    get renderSettings() { return { defaultScale: 24, funcs: ["numhint", "edgedraw"] }; }
     constructor({ grid, task, color = false }) {
         super(SquareGrid.fromSize(grid.width, grid.height));
         
