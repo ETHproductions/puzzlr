@@ -4,6 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class DominosaPuzzle extends Puzzle {
     get type() { return 'dominosa'; }
+    get renderSettings() { return { defaultScale: 20, funcs: ["numhint", "edgedomino"] }; }
     constructor({ grid, task }) {
         super(SquareGrid.fromSize(grid.width, grid.height));
 

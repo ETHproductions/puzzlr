@@ -2,15 +2,19 @@ const ns = "http://www.w3.org/2000/svg";
 const svg = document.getElementById('solution');
 
 export class RenderedGrid {
+    #elemBuffer = [];
+
     constructor(puzzle, options) {
         while (svg.firstChild) {
             svg.removeChild(svg.lastChild);
         }
+        
+        const { defaultScale: scale, funcs: renderfuncs } = puzzle.renderSettings;
+        this.scale = scale, this.renderfuncs = renderfuncs;
 
         this.puzzle = puzzle, this.options = options;
         const grid = this.grid = puzzle.grid;
 
-        const scale = this.scale = options.scale || 30;
         let minX = Infinity, maxX = -Infinity;
         let minY = Infinity, maxY = -Infinity;
         for (let vert of grid.verts) {
@@ -105,18 +109,12 @@ export class RenderedGrid {
     }
 
     renderPuzzle() {
-        let renderfuncs = {
-            "sudoku": ["edgearea", "numhint", "sudoku"],
-            "stitches": ["edgestitch", "stitchhole"],
-            "slitherlink": ["numhint", "edgedraw"],
-            "dominosa": ["numhint", "edgedomino"],
-            "thermometers": ["edgeplain", "binarythermo"],
-        }[this.puzzle.type] || ["edgearea", "binarygrey"];
+        this.#elemBuffer = [];
 
-        let edgefuncs = renderfuncs.map(f => this.renderElements.edge[f]).filter(f => f);
-        let cellfuncs = renderfuncs.map(f => this.renderElements.cell[f]).filter(f => f);
+        let edgefuncs = this.renderfuncs.map(f => this.renderElements.edge[f]).filter(f => f);
+        let cellfuncs = this.renderfuncs.map(f => this.renderElements.cell[f]).filter(f => f);
 
-        function render(objects, cache, funcs) {
+        let render = (objects, cache, funcs) => {
             for (let i in objects) {
                 let cached = cache[i];
                 if (!cached)
@@ -125,12 +123,12 @@ export class RenderedGrid {
                 if (obj.value == cached.value) continue;
                 for (let elem of cached.elems)
                     elem.parentElement.removeChild(elem);
-                cached.elems = [];
+
                 for (let func of funcs) {
-                    let result = func(obj);
-                    if (result instanceof Array) cached.elems.push(...result);
-                    else if (result instanceof Element) cached.elems.push(result);
+                    func(obj);
                 }
+                cached.elems = this.#elemBuffer;
+                this.#elemBuffer = [];
                 cached.value = obj.value;
             }
         }
@@ -152,6 +150,7 @@ export class RenderedGrid {
             elem.setAttributeNS(null, prop, attributes[prop]);
         }
         group.appendChild(elem);
+        this.#elemBuffer.push(elem);
         return elem;
     }
     addHint(hint, x, y, color = "black", size = this.scale / 2) {
@@ -170,7 +169,7 @@ export class RenderedGrid {
     renderElements = {
         edge: {
             "edgeplain": (edge) => {
-                return this.createSVGElement("line", svg.edgesBase, {
+                this.createSVGElement("line", svg.edgesBase, {
                     "stroke": "black",
                     "stroke-width": edge.isEdgeOfGrid ? 3 : 1,
                     "stroke-linecap": "square",
@@ -181,7 +180,7 @@ export class RenderedGrid {
                 });
             },
             "edgearea": (edge) => {
-                return this.createSVGElement("line", svg.edgesBase, {
+                this.createSVGElement("line", svg.edgesBase, {
                     "stroke": "black",
                     "stroke-width": edge.isEdgeOfGrid || (edge.leftCell != null && edge.rightCell != null && edge.leftCell.area_id != edge.rightCell.area_id) ? 3 : 1,
                     "stroke-linecap": "square",
@@ -192,7 +191,7 @@ export class RenderedGrid {
                 });
             },
             "edgedraw": (edge) => {
-                return this.createSVGElement("line", svg.edgesBase, {
+                this.createSVGElement("line", svg.edgesBase, {
                     "stroke": edge.value == 0 ? "transparent" : "black",
                     "stroke-width": edge.value == 1 ? 3 : 1,
                     "stroke-linecap": "square",
@@ -204,7 +203,7 @@ export class RenderedGrid {
                 });
             },
             "edgedomino": (edge) => {
-                return this.createSVGElement("line", svg.edgesBase, {
+                this.createSVGElement("line", svg.edgesBase, {
                     "stroke": edge.isEdgeOfGrid || edge.value != 1 ? "black" : "transparent",
                     "stroke-width": edge.isEdgeOfGrid ? 3 : edge.value == 0 ? 2 : 1,
                     "stroke-linecap": "square",
@@ -216,7 +215,7 @@ export class RenderedGrid {
                 });
             },
             "edgestitch": (edge) => {
-                let elems = [this.createSVGElement("line", svg.edgesBase, {
+                this.createSVGElement("line", svg.edgesBase, {
                     "stroke": edge.value == 0 ? "#B00" : "black",
                     "stroke-width": edge.isEdgeOfGrid || (edge.leftCell != null && edge.rightCell != null && edge.leftCell.area_id != edge.rightCell.area_id) ? 3 : 1,
                     "stroke-linecap": "square",
@@ -224,12 +223,12 @@ export class RenderedGrid {
                     "y1": this.convertY(edge.fromVert.rpos.y),
                     "x2": this.convertX(edge.toVert.rpos.x),
                     "y2": this.convertY(edge.toVert.rpos.y)
-                })];
+                });
                 if (edge.value == 1) {
                     let mid1 = edge.leftCell.midpoint;
                     let mid2 = edge.rightCell.midpoint;
         
-                    elems.push(this.createSVGElement("line", svg.answerGroup, {
+                    this.createSVGElement("line", svg.answerGroup, {
                         "stroke": "black",
                         "stroke-width": this.scale / 6,
                         "stroke-linecap": "round",
@@ -237,10 +236,10 @@ export class RenderedGrid {
                         "y1": this.convertY(mid1.y),
                         "x2": this.convertX(mid2.x),
                         "y2": this.convertY(mid2.y)
-                    }));
+                    });
                 }
                 else if (edge.value == 0) {
-                    elems.push(this.createSVGElement("line", svg.answerGroup, {
+                    this.createSVGElement("line", svg.answerGroup, {
                         "stroke": "#D00",
                         "stroke-width": 3,
                         "stroke-linecap": "square",
@@ -248,9 +247,8 @@ export class RenderedGrid {
                         "y1": this.convertY(edge.fromVert.rpos.y),
                         "x2": this.convertX(edge.toVert.rpos.x),
                         "y2": this.convertY(edge.toVert.rpos.y)
-                    }));
+                    });
                 }
-                return elems;
             },
         },
         cell: {
@@ -266,33 +264,32 @@ export class RenderedGrid {
             "numhint": (cell) => {
                 if (cell.hint === undefined || cell.hint == -1) return;
                 let { x, y } = cell.midpoint;
-                return this.addHint(cell.hint, this.convertX(x), this.convertY(y), "#000", this.scale / 1.5);
+                this.addHint(cell.hint, this.convertX(x), this.convertY(y), "#000", this.scale / 1.5);
             },
             "sudoku": (cell) => {
                 if (cell.hint !== undefined && cell.hint != -1) return;
                 let { x, y } = cell.midpoint;
                 if (cell.value.length == 1) {
-                    return this.addHint(cell.value[0].toString(36).toUpperCase(), this.convertX(x), this.convertY(y), "#60B", this.scale / 1.5);
+                    this.addHint(cell.value[0].toString(36).toUpperCase(), this.convertX(x), this.convertY(y), "#60B", this.scale / 1.5);
+                    return;
                 }
                 let maxvals = this.grid.width;
                 let numacross = Math.ceil(maxvals ** 0.5);
                 let numdown = Math.ceil(maxvals / numacross);
                 let fontsize = this.scale / numacross;
-                let elems = [];
                 for (let i = 0; i < maxvals; i++) {
                     let val = (i + 1).toString(36).toUpperCase();
                     if (cell.value.includes(i + 1)) {
-                        elems.push(this.addHint(val, this.convertX(x - 0.5 + (i % numacross + 0.5) / numacross), this.convertY(y - 0.5 + ((i / numacross | 0) + 0.5) / numdown), "#60B", fontsize))
+                        this.addHint(val, this.convertX(x - 0.5 + (i % numacross + 0.5) / numacross), this.convertY(y - 0.5 + ((i / numacross | 0) + 0.5) / numdown), "#60B", fontsize);
                     }
                 }
-                return elems;
             },
             "stitchhole": (cell) => {
                 if (cell.value.length != 1) return;
                 if (cell.value[0] == 1) {
                     let mid = cell.midpoint;
                     
-                    return this.createSVGElement("circle", svg.answerGroup, {
+                    this.createSVGElement("circle", svg.answerGroup, {
                         "stroke": "black",
                         "stroke-width": this.scale / 7,
                         "fill": "transparent",
@@ -304,24 +301,22 @@ export class RenderedGrid {
                 else if (cell.value[0] == 0) {
                     let mid = cell.midpoint;
         
-                    return [
-                        this.createSVGElement("line", svg.answerGroup, {
-                            "stroke": "#B00",
-                            "stroke-width": 2,
-                            "x1": this.convertX(mid.x - 0.15),
-                            "y1": this.convertY(mid.y - 0.15),
-                            "x2": this.convertX(mid.x + 0.15),
-                            "y2": this.convertY(mid.y + 0.15)
-                        }),
-                        this.createSVGElement("line", svg.answerGroup, {
-                            "stroke": "#B00",
-                            "stroke-width": 2,
-                            "x1": this.convertX(mid.x - 0.15),
-                            "y1": this.convertY(mid.y + 0.15),
-                            "x2": this.convertX(mid.x + 0.15),
-                            "y2": this.convertY(mid.y - 0.15)
-                        })
-                    ];
+                    this.createSVGElement("line", svg.answerGroup, {
+                        "stroke": "#B00",
+                        "stroke-width": 2,
+                        "x1": this.convertX(mid.x - 0.15),
+                        "y1": this.convertY(mid.y - 0.15),
+                        "x2": this.convertX(mid.x + 0.15),
+                        "y2": this.convertY(mid.y + 0.15)
+                    });
+                    this.createSVGElement("line", svg.answerGroup, {
+                        "stroke": "#B00",
+                        "stroke-width": 2,
+                        "x1": this.convertX(mid.x - 0.15),
+                        "y1": this.convertY(mid.y + 0.15),
+                        "x2": this.convertX(mid.x + 0.15),
+                        "y2": this.convertY(mid.y - 0.15)
+                    });
                 }
             },
             "binarythermo": (cell) => {
@@ -339,6 +334,9 @@ export class RenderedGrid {
                 let dir2 = prevDir == -1 ? -1 : nextDir == -1 ? -2 : nextDir;
 
                 let mid = cell.midpoint;
+                // takes a list of [x, y] points where x/y are in [-0.5, 0.5],
+                // rotates based on dir1, and scales and translates to the real
+                // location of the cell in the render
                 const xyConversion = a => [
                     this.convertX(mid.x + a[dir1 % 2] * [1,-1,-1,1][dir1]),
                     this.convertY(mid.y + a[dir1 % 2 ^ 1] * [1,1,-1,-1][dir1])
@@ -347,21 +345,21 @@ export class RenderedGrid {
                 const tw = 0.16; // thermo width, as ratio of cell width from center to edge of thermo
                 const fill = cell.value == 1 ? "#D14" : cell.value == 0 ? "#FFF" : "#CCC";
                 const stroke = "#333";
+                const swidth = this.scale / 12;
 
-                // simplest case first: straight line (2 cases)
+                // simplest case first: straight line (2 directions)
                 if (dir2 >= 0 && Math.abs(dir1 - dir2) == 2) {
                     let p = [ [0.5, -tw], [-0.5, -tw], [-0.5, tw], [0.5, tw] ].map(xyConversion);
-                    return [
-                        this.createSVGElement("path", svg.answerGroup, {
-                            "fill": fill,
-                            "d": `M ${ p[0] } L ${ p[1] } L ${ p[2] } L ${ p[3] } Z`,
-                        }),
-                        this.createSVGElement("path", svg.answerGroup, {
-                            "stroke": stroke,
-                            "stroke-width": 2,
-                            "d": `M ${ p[0] } L ${ p[1] } M ${ p[2] } L ${ p[3] }`,
-                        }),
-                    ];
+                    this.createSVGElement("path", svg.answerGroup, {
+                        "fill": fill,
+                        "d": `M ${ p[0] } L ${ p[1] } L ${ p[2] } L ${ p[3] } Z`,
+                    });
+                    this.createSVGElement("path", svg.answerGroup, {
+                        "stroke": stroke,
+                        "stroke-width": swidth,
+                        "d": `M ${ p[0] } L ${ p[1] } M ${ p[2] } L ${ p[3] }`,
+                    });
+                    return;
                 }
 
                 // now for the thermo ends (4 directions, 2 sizes)
@@ -370,12 +368,13 @@ export class RenderedGrid {
                     const bo = (bw ** 2 - tw ** 2) ** 0.5; // bulb offset of intersection
                     let p = [ [0.5, -tw], [bo, -tw], [bo, tw], [0.5, tw] ].map(xyConversion);
 
-                    return this.createSVGElement("path", svg.answerGroup, {
+                    this.createSVGElement("path", svg.answerGroup, {
                         "fill": fill,
                         "stroke": stroke,
-                        "stroke-width": 2,
+                        "stroke-width": swidth,
                         "d": `M ${ p[0] } L ${ p[1] } A ${ bw * this.scale } ${ bw * this.scale } 0 1 0 ${ p[2] } L ${ p[3] }`
                     });
+                    return;
                 }
                 
                 // finally we take care of the most complex shape: curves
@@ -389,18 +388,16 @@ export class RenderedGrid {
                 
                 let p = [ [0.5, -tw], [0, -tw], [-tw, 0], [-tw, 0.5], [tw, 0.5], [tw, tw], [0.5, tw] ].map(xyConversion);
 
-                return [
-                    this.createSVGElement("path", svg.answerGroup, {
-                        "fill": fill,
-                        "d": `M ${ p[0] } L ${ p[1] } A ${ tw * this.scale } ${ tw * this.scale } 0 0 0 ${ p[2] } L ${ p[3] } L ${ p[4] } L ${ p[5] } L ${ p[6] }`
-                    }),
-                    this.createSVGElement("path", svg.answerGroup, {
-                        "fill": "transparent",
-                        "stroke": stroke,
-                        "stroke-width": 2,
-                        "d": `M ${ p[0] } L ${ p[1] } A ${ tw * this.scale } ${ tw * this.scale } 0 0 0 ${ p[2] } L ${ p[3] } M ${ p[4] } L ${ p[5] } L ${ p[6] }`
-                    })
-                ]
+                this.createSVGElement("path", svg.answerGroup, {
+                    "fill": fill,
+                    "d": `M ${ p[0] } L ${ p[1] } A ${ tw * this.scale } ${ tw * this.scale } 0 0 0 ${ p[2] } L ${ p[3] } L ${ p[4] } L ${ p[5] } L ${ p[6] }`
+                });
+                this.createSVGElement("path", svg.answerGroup, {
+                    "fill": "transparent",
+                    "stroke": stroke,
+                    "stroke-width": swidth,
+                    "d": `M ${ p[0] } L ${ p[1] } A ${ tw * this.scale } ${ tw * this.scale } 0 0 0 ${ p[2] } L ${ p[3] } M ${ p[4] } L ${ p[5] } L ${ p[6] }`
+                });
             }
         }
     };

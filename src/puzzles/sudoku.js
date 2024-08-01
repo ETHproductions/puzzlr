@@ -4,6 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class SudokuPuzzle extends Puzzle {
     get type() { return 'sudoku'; }
+    get renderSettings() { return { defaultScale: 36, funcs: ["edgearea", "numhint", "sudoku"] }; }
     constructor({ grid, task }) {
         if (task.length != task[0].length)
             throw new Error("Sudoku grid must be square");

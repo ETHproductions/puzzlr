@@ -4,6 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class YinYangPuzzle extends Puzzle {
     get type() { return 'yin-yang'; }
+    get renderSettings() { return { defaultScale: 24, funcs: ["edgearea", "binarygrey"] }; }
     constructor({ grid, task }) {
         let size = task.length;
 

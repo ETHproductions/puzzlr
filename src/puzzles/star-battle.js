@@ -4,6 +4,7 @@ import SquareGrid from '../base/SquareGrid.js';
 
 class StarBattlePuzzle extends Puzzle {
     get type() { return 'star-battle'; }
+    get renderSettings() { return { defaultScale: 30, funcs: ["edgearea", "binarygrey"] }; }
     constructor({ areas, star_count }) {
         super(SquareGrid.fromAreas(areas));
         this.areas = areas;
