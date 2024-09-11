@@ -261,6 +261,23 @@ export class RenderedGrid {
                     }).join(" ") + " Z"
                 });
             },
+            "binarystar": (cell) => {
+                this.createSVGElement("path", svg.cellsBase, cell.value.length == 1 && cell.value[0] == 1 ? {
+                    "fill": "#333",
+                    "d": [...Array(10)].map((_, i) => {
+                        let {x, y} = cell.midpoint;
+                        let angle = i * (Math.PI / 5) - (Math.PI / 2);
+                        let r = [0.3, 0.15][i % 2];
+                        return (i > 0 ? "L " : "M ") + [this.convertX(x + Math.cos(angle) * r), this.convertY(y + Math.sin(angle) * r)]
+                    }).join(" ") + " Z"
+                } : {
+                    "fill": cell.value.length != 1 ? "#CCC" : "#FFF",
+                    "d": cell.verts.map((v, i) => {
+                        let {x, y} = v.rpos;
+                        return (i > 0 ? "L " : "M ") + [this.convertX(x), this.convertY(y)]
+                    })
+                });
+            },
             "numhint": (cell) => {
                 if (cell.hint === undefined || cell.hint == -1) return;
                 let { x, y } = cell.midpoint;
