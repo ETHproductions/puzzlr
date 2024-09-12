@@ -120,7 +120,7 @@ export class RenderedGrid {
                 if (!cached)
                     cached = cache[i] = { elems: [], value: [] };
                 let obj = objects[i];
-                if (obj.value == cached.value) continue;
+                if (obj.value + "" == cached.value + "") continue;
                 for (let elem of cached.elems)
                     elem.parentElement.removeChild(elem);
 
