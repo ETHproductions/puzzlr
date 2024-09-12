@@ -5,6 +5,7 @@ let puzzleData = null;
 let puzzleType = null;
 let livePuzzle = null;
 let renderedGrid = null;
+let renderMessage = null;
 
 const solveButton = document.getElementById("button-solve");
 const statusText = document.getElementById("status");
@@ -64,6 +65,16 @@ solveButton.onclick = (e) => {
 };
 
 const puzzleWorker = new Worker("web-solver.js");
+const renderPuzzle = () => {
+    if (!renderMessage) return;
+    let e = renderMessage;
+    renderMessage = null;
+    e.data.answer.forEach((v, i) => {
+        livePuzzle.variables[i].value = v;
+    });
+    renderedGrid.renderPuzzle();
+    statusText.innerText = e.data.output;
+}
 puzzleWorker.onmessage = e => {
     // console.log("Message received from child:", e.data);
     switch (e.data.status) {
@@ -72,11 +83,8 @@ puzzleWorker.onmessage = e => {
             break;
         case 'update':
         case 'done':
-            e.data.answer.forEach((v, i) => {
-                livePuzzle.variables[i].value = v;
-            });
-            renderedGrid.renderPuzzle();
-            statusText.innerText = e.data.output;
+            renderMessage = e;
+            setTimeout(renderPuzzle, 1);
             break;
         case 'invalid':
             statusText.innerText = "Error processing puzzle";
