@@ -14,6 +14,10 @@ module.exports = {
     'eslint:recommended',
     '@vue/eslint-config-typescript',
   ],
+  parserOptions: {
+    ecmaVersion: 13,
+    sourceType: "module"
+  },
   rules: {
     'vue/multi-word-component-names': 'off',
   },
