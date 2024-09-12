@@ -48,7 +48,7 @@ function runPuzzle() {
     livePuzzle.initiate_solve(options);
     let last_update = 0, check_len = 1, start_time = Date.now();
     options.on_check = (v) => {
-        if (new Date - last_update < 50) return;
+        if (new Date - last_update < 17) return;
         last_update = new Date;
         check_len = Math.max(check_len, ("" + livePuzzle.base_partsol.check_queue.length).length);
         let output = "Running... (" + livePuzzle.base_partsol.check_queue.length + " checks / " + livePuzzle.base_partsol.deduct_queue.length + " deducts / " + livePuzzle.partsols_by_depth.slice(-1)[0].length + " ps)";
