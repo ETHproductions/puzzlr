@@ -18,8 +18,8 @@ import {
 export default class Puzzle {
   grid: PuzzleGrid;
   options: any;
-  variables: PuzzleVariable[];
-  constraints: Constraint[];
+  variables: PuzzleVariable[] = [];
+  constraints: Constraint[] = [];
 
   ps: PartialSolution = new PartialSolution(this);
   base_partsol: PartialSolution = this.ps;
@@ -29,8 +29,12 @@ export default class Puzzle {
   global_stats: any;
   start_time?: Date;
 
-  get type() {
+  static get type() {
     return "default";
+  }
+  get type() {
+    const _super = <typeof Puzzle>this.constructor;
+    return _super.type;
   }
   get renderSettings() {
     return { defaultScale: 30, funcs: ["edgearea", "binarygrey"] };
@@ -41,8 +45,6 @@ export default class Puzzle {
    */
   constructor(grid: PuzzleGrid) {
     this.grid = grid;
-    this.variables = [];
-    this.constraints = [];
   }
 
   /**
@@ -177,7 +179,7 @@ export default class Puzzle {
         this.ps.check_queue.push({ variable, constraint });
   }
 
-  solve(options: { max_depth: number; debug?: number; mode?: string }) {
+  solve(options?: { max_depth: number; debug?: number; mode?: string }) {
     if (options) this.initiate_solve(options);
     this.debug_log(0, "Running...");
     solveloop: while (true) {

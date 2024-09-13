@@ -3,7 +3,7 @@ import { SUM_EQUALS, SUM_EQUALS_IF } from "../generic-constraints";
 import SquareGrid from "../grids/SquareGrid";
 
 class NorinoriPuzzle extends Puzzle {
-  get type() {
+  static get type() {
     return "norinori";
   }
   get renderSettings() {
