@@ -6,9 +6,12 @@ class NorinoriPuzzle extends Puzzle {
     get type() { return 'norinori'; }
     get renderSettings() { return { defaultScale: 30, funcs: ["edgearea", "binarygrey"] }; }
 
+    grid: SquareGrid;
     areas: { x: number, y: number }[][];
     constructor({ areas }: { areas: { x: number, y: number }[][] }) {
-        super(SquareGrid.fromAreas(areas));
+        const grid = SquareGrid.fromAreas(areas);
+        super(grid);
+        this.grid = grid;
         this.areas = areas;
 
         for (const area of areas) {
