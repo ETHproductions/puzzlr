@@ -26,7 +26,7 @@ document.getElementById("puzzfile").onchange = (e) => {
             console.log('Could not load data.');
             return;
         }
-        
+
         console.log(puzzleData)
         let finishedLoading = () => {
             puzzleType = puzzleTypeCache[type];
@@ -46,20 +46,20 @@ document.getElementById("puzzfile").onchange = (e) => {
             };
             renderedGrid = new RenderedGrid(livePuzzle, puzzleOptions);
         };
-            
+
         let type = puzzleData.type;
         if (type in puzzleTypeCache) finishedLoading();
         else import(`./src/puzzles/${type}.js`).then(data => {
             puzzleTypeCache[type] = data.default;
             finishedLoading();
         });
-        
+
     }
 };
 document.getElementById("solvemode").onclick = (e) => {
     puzzleWorker.postMessage({ command: 'changemode', data: e.target.value });
 };
-solveButton.onclick = (e) => {
+solveButton.onclick = () => {
     statusText.innerText = "Running...";
     puzzleWorker.postMessage({ command: 'solve' });
 };
