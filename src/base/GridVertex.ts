@@ -19,23 +19,16 @@ export default class GridVertex implements PuzzleVariable {
 
   /**
    * Creates a new grid vertex at a point in the plane.
-   * @param {PuzzleGrid} grid the grid this vertex belongs to
-   * @param {{x: number, y: number}} rpos position of the vertex in the plane
-   * @param {Object} vpos virtual position for simplfying non-square grids;
-   * can be anything but recommended to be integer {x, y}
+   * @param grid the grid this vertex belongs to
+   * @param rpos position of the vertex in the plane
+   * @param vpos virtual position for simplfying non-square grids; can be
+   * anything but recommended to be integer {x, y}
    */
   constructor(
     grid: PuzzleGrid,
     rpos: { x: number; y: number },
     vpos: object = rpos
   ) {
-    if (!(grid instanceof PuzzleGrid))
-      throw new Error("new GridVertex() arg 0 must be a PuzzleGrid object");
-    if (!(rpos && "x" in rpos && "y" in rpos))
-      throw new Error(
-        "new GridVertex() arg 1 must be an object with 'x' and 'y' properties"
-      );
-
     this.grid = grid;
     this.rpos = rpos;
     this.vpos = vpos;
@@ -47,7 +40,6 @@ export default class GridVertex implements PuzzleVariable {
 
   /**
    * Sets the ID for the network of vertices connected to this one.
-   * @param {number} id
    */
   setNetID(id: number) {
     if (this.netid == id) return;
@@ -57,8 +49,6 @@ export default class GridVertex implements PuzzleVariable {
 
   /**
    * Adds a vertex to the list of those connected with this one.
-   * @param {GridVertex} vert vertex to be connected
-   * @param {GridEdge} edge edge connecting this vertex to the other
    */
   addEdgeTo(vert: GridVertex, edge: GridEdge) {
     if (this.grid.finalized) throw new Error("Cannot modify a finalized grid");
@@ -78,10 +68,9 @@ export default class GridVertex implements PuzzleVariable {
 
   /**
    * Calculate the angle of the line from this vertex to another.
-   * @param {GridVertex} vert
-   * @returns {number} angle in (-pi, pi]
+   * @returns angle in (-pi, pi]
    */
-  angleTo(vert: GridVertex): number {
+  angleTo(vert: GridVertex) {
     if (typeof vert == "number") vert = this.grid.verts[vert];
 
     return Math.atan2(vert.rpos.y - this.rpos.y, vert.rpos.x - this.rpos.x);

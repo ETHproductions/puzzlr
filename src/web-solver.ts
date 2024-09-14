@@ -48,7 +48,7 @@ function runPuzzle() {
     last_update = Date.now();
     check_len = Math.max(
       check_len,
-      ("" + livePuzzle.base_partsol.check_queue.length).length
+      ("" + livePuzzle.base_partsol.check_queue.length).length,
     );
     const output =
       "Running... (" +
@@ -71,8 +71,8 @@ function runPuzzle() {
     livePuzzle.base_partsol.status == "solved"
       ? "Solved!"
       : livePuzzle.base_partsol.status == "contradiction"
-      ? "Contradiction found."
-      : "Couldn't solve...";
+        ? "Contradiction found."
+        : "Couldn't solve...";
   output += ` (took ${(Date.now() - start_time) / 1000} seconds)`;
   postMessage({
     status: "done",

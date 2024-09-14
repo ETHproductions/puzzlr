@@ -50,7 +50,7 @@ export default class PuzzleGrid {
   addVert(
     rpos: { x: number; y: number },
     conns: GridVertex[] = [],
-    vpos: any = rpos
+    vpos: any = rpos,
   ) {
     if (this.#finalized) throw new Error("Cannot modify a finalized grid");
 
@@ -77,7 +77,7 @@ export default class PuzzleGrid {
     fromVert: GridVertex,
     toVert: GridVertex,
     vpos?: any,
-    noCell: boolean = false
+    noCell: boolean = false,
   ) {
     if (this.#finalized) throw new Error("Cannot modify a finalized grid");
 
@@ -86,7 +86,7 @@ export default class PuzzleGrid {
         "Edge already exists between vertices " +
           fromVert.id +
           " and " +
-          toVert.id
+          toVert.id,
       );
 
     if (typeof vpos != "object") (noCell = vpos), (vpos = undefined);
@@ -146,14 +146,14 @@ export default class PuzzleGrid {
     oldCell: GridCell,
     fromInd: number,
     toInd: number,
-    noNewCell?: boolean
+    noNewCell?: boolean,
   ) {
     if (fromInd == 0 || (0 < toInd && toInd < fromInd))
       [fromInd, toInd] = [toInd, fromInd];
 
     const newCellVerts = oldCell.verts.slice(
       fromInd,
-      toInd || oldCell.verts.length
+      toInd || oldCell.verts.length,
     );
     if (toInd == 0) newCellVerts.push(oldCell.verts[0]);
 
@@ -261,11 +261,11 @@ export default class PuzzleGrid {
   angleThroughVertex(vert1: GridVertex, pivot: GridVertex, vert2: GridVertex) {
     const slope1 = Math.atan2(
       pivot.rpos.y - vert1.rpos.y,
-      pivot.rpos.x - vert1.rpos.x
+      pivot.rpos.x - vert1.rpos.x,
     );
     const slope2 = Math.atan2(
       vert2.rpos.y - pivot.rpos.y,
-      vert2.rpos.x - pivot.rpos.x
+      vert2.rpos.x - pivot.rpos.x,
     );
     return ((slope2 - slope1 + 3 * Math.PI) % (2 * Math.PI)) - Math.PI;
   }

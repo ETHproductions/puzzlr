@@ -1,9 +1,6 @@
 <template>
   Download examples from
-  <a
-    target="_blank"
-    href="https://github.com/ETHproductions/puzzlr/tree/main/src/test"
-  >
+  <a target="_blank" href="https://github.com/ETHproductions/puzzlr/tree/main/src/test">
     GitHub
   </a>
   <br />
@@ -22,7 +19,7 @@
   <br />
   <span>{{ statusText }}</span>
   <br />
-  <RenderedGrid :puzzle="livePuzzle" :options="puzzleOptions" />
+  <RenderedGrid ref="renderedGrid" v-if="livePuzzle" :puzzle="livePuzzle" :options="puzzleOptions" />
 </template>
 
 <script lang="ts" setup>
@@ -37,6 +34,7 @@ const livePuzzle = ref<Puzzle | null>(null);
 let puzzleOptions: object = {};
 let renderMessage: any = null;
 let puzzleReady = ref<boolean>(false);
+let renderedGrid = ref();
 
 const statusText = ref<string>("");
 
@@ -120,7 +118,7 @@ const renderPuzzle = () => {
   answer.forEach((v, i) => {
     livePuzzle.value!.variables[i].value = v;
   });
-  //renderedGrid.renderPuzzle();
+  renderedGrid.value.renderPuzzle();
   statusText.value = e.data.output;
 };
 puzzleWorker.onmessage = (e) => {

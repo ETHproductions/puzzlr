@@ -2,15 +2,35 @@
   <svg ref="solution"></svg>
 </template>
 
+<style>
+svg {
+  user-select: none;
+}
+</style>
+
 <script setup lang="ts">
 import { GridCell, GridEdge, PuzzleGrid } from "@/base";
 import Puzzle from "@/base/Puzzle";
 import { PuzzleVariable, PuzzleVariableValues } from "@/base/PuzzleVariable";
-import { onMounted, useTemplateRef } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 const ns = "http://www.w3.org/2000/svg";
+
+export type Options = {
+  hintsLeft?: number[];
+  hintsTop?: number[];
+  hintsRight?: number[];
+  hintsBottom?: number[];
+}
+export type Props = {
+  puzzle: Puzzle;
+  options: Options;
+}
+const { puzzle, options } = defineProps<Props>();
+
+let solution = ref();
 let svg: SVGSVGElement;
-let puzzle: Puzzle, grid: PuzzleGrid;
+let grid: PuzzleGrid;
 let scale: number, renderfuncs: string[];
 let elemBuffer: SVGElement[] = [];
 let edgecache: { elems: SVGElement[]; value: PuzzleVariableValues }[] = [];
@@ -25,15 +45,12 @@ let width: number,
   maxY: number;
 let groups = new Map<string, SVGGElement>();
 
-function resetPuzzle(newPuzzle: Puzzle, newOptions: any) {
-  while (svg.lastChild) {
+function resetPuzzle() {
+  while (svg.lastChild)
     svg.removeChild(svg.lastChild);
-  }
 
-  ({ defaultScale: scale, funcs: renderfuncs } = newPuzzle.renderSettings);
-
-  puzzle = newPuzzle;
-  grid = newPuzzle.grid;
+  ({ defaultScale: scale, funcs: renderfuncs } = puzzle.renderSettings);
+  grid = puzzle.grid;
 
   (minX = Infinity), (maxX = -Infinity);
   (minY = Infinity), (maxY = -Infinity);
@@ -56,7 +73,11 @@ function resetPuzzle(newPuzzle: Puzzle, newOptions: any) {
     "cells-base",
     "edges-base",
     "hints",
-    "answer" /* "cells-hitbox", "edges-hitbox" */,
+    "answer",
+    /*
+    "cells-hitbox",
+    "edges-hitbox",
+    */
   ]) {
     let group = document.createElementNS(ns, "g");
     groups.set(groupName, group);
@@ -100,10 +121,10 @@ function resetPuzzle(newPuzzle: Puzzle, newOptions: any) {
     }
   };
 
-  addEdgeHints(newOptions.hintsLeft, minX - 0.5, minY + 0.5, 1);
-  addEdgeHints(newOptions.hintsRight, maxX + 0.5, minY + 0.5, 1);
-  addEdgeHints(newOptions.hintsTop, minX + 0.5, minY - 0.5, 0);
-  addEdgeHints(newOptions.hintsBottom, minX + 0.5, maxY + 0.5, 0);
+  addEdgeHints(options.hintsLeft ?? [], minX - 0.5, minY + 0.5, 1);
+  addEdgeHints(options.hintsRight ?? [], maxX + 0.5, minY + 0.5, 1);
+  addEdgeHints(options.hintsTop ?? [], minX + 0.5, minY - 0.5, 0);
+  addEdgeHints(options.hintsBottom ?? [], minX + 0.5, maxY + 0.5, 0);
 
   edgecache = [];
   cellcache = [];
@@ -124,13 +145,13 @@ function renderPuzzle() {
   let render = (
     objects: PuzzleVariable[],
     cache: { elems: SVGElement[]; value: PuzzleVariableValues }[],
-    funcs: ((v: any) => void)[]
+    funcs: RenderFunc<any>[]
   ) => {
     for (let i in objects) {
+      let obj = objects[i];
       let cached = cache[i];
       if (!cached) cached = cache[i] = { elems: [], value: [] };
-      let obj = objects[i];
-      if (obj.value + "" == cached.value + "") continue;
+      else if (obj.value + "" == cached.value + "") continue;
       for (let elem of cached.elems) elem.parentElement?.removeChild(elem);
 
       for (let func of funcs) {
@@ -184,9 +205,12 @@ function addHint(
   return text;
 }
 
+type RenderFunc<T> = (a: T) => void;
+type RenderFuncCollection<T> = { [k: string]: RenderFunc<T> };
+
 const renderElements: {
-  edge: { [k: string]: (edge: GridEdge) => void };
-  cell: { [k: string]: (cell: GridCell) => void };
+  edge: RenderFuncCollection<GridEdge>;
+  cell: RenderFuncCollection<GridCell>;
 } = {
   edge: {
     edgeplain: (edge) => {
@@ -205,9 +229,9 @@ const renderElements: {
         stroke: "black",
         "stroke-width":
           edge.isEdgeOfGrid ||
-          (edge.leftCell != null &&
-            edge.rightCell != null &&
-            edge.leftCell.area_id != edge.rightCell.area_id)
+            (edge.leftCell != null &&
+              edge.rightCell != null &&
+              edge.leftCell.area_id != edge.rightCell.area_id)
             ? 3
             : 1,
         "stroke-linecap": "square",
@@ -241,8 +265,8 @@ const renderElements: {
         "stroke-width": edge.isEdgeOfGrid
           ? 3
           : edge.value.length == 1 && edge.value[0] == 0
-          ? 2
-          : 1,
+            ? 2
+            : 1,
         "stroke-linecap": "square",
         "stroke-dasharray":
           edge.isEdgeOfGrid || edge.value.length == 1 ? "" : "3 4",
@@ -257,9 +281,9 @@ const renderElements: {
         stroke: edge.value.length == 1 && edge.value[0] == 0 ? "#B00" : "black",
         "stroke-width":
           edge.isEdgeOfGrid ||
-          (edge.leftCell != null &&
-            edge.rightCell != null &&
-            edge.leftCell.area_id != edge.rightCell.area_id)
+            (edge.leftCell != null &&
+              edge.rightCell != null &&
+              edge.leftCell.area_id != edge.rightCell.area_id)
             ? 3
             : 1,
         "stroke-linecap": "square",
@@ -302,8 +326,8 @@ const renderElements: {
           cell.value.length != 1
             ? "#CCC"
             : cell.value[0] == 1
-            ? "#555"
-            : "#FFF",
+              ? "#555"
+              : "#FFF",
         d:
           cell.verts
             .map((v, i) => {
@@ -319,30 +343,30 @@ const renderElements: {
         "cells-base",
         cell.value.length == 1 && cell.value[0] == 1
           ? {
-              fill: "#333",
-              d:
-                [...Array(10)]
-                  .map((_, i) => {
-                    let { x, y } = cell.midpoint;
-                    let angle = i * (Math.PI / 5) - Math.PI / 2;
-                    let r = [0.3, 0.15][i % 2];
-                    return (
-                      (i > 0 ? "L " : "M ") +
-                      [
-                        convertX(x + Math.cos(angle) * r),
-                        convertY(y + Math.sin(angle) * r),
-                      ]
-                    );
-                  })
-                  .join(" ") + " Z",
-            }
+            fill: "#333",
+            d:
+              [...Array(10)]
+                .map((_, i) => {
+                  let { x, y } = cell.midpoint;
+                  let angle = i * (Math.PI / 5) - Math.PI / 2;
+                  let r = [0.3, 0.15][i % 2];
+                  return (
+                    (i > 0 ? "L " : "M ") +
+                    [
+                      convertX(x + Math.cos(angle) * r),
+                      convertY(y + Math.sin(angle) * r),
+                    ]
+                  );
+                })
+                .join(" ") + " Z",
+          }
           : {
-              fill: cell.value.length != 1 ? "#CCC" : "#FFF",
-              d: cell.verts.map((v, i) => {
-                let { x, y } = v.rpos;
-                return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
-              }),
-            }
+            fill: cell.value.length != 1 ? "#CCC" : "#FFF",
+            d: cell.verts.map((v, i) => {
+              let { x, y } = v.rpos;
+              return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
+            }),
+          }
       );
     },
     numhint: (cell) => {
@@ -435,19 +459,19 @@ const renderElements: {
         ? prevCell.vpos.x > cell.vpos.x
           ? 0
           : prevCell.vpos.y > cell.vpos.y
-          ? 1
-          : prevCell.vpos.x < cell.vpos.x
-          ? 2
-          : 3
+            ? 1
+            : prevCell.vpos.x < cell.vpos.x
+              ? 2
+              : 3
         : -1;
       let nextDir = nextCell
         ? nextCell.vpos.x > cell.vpos.x
           ? 0
           : nextCell.vpos.y > cell.vpos.y
-          ? 1
-          : nextCell.vpos.x < cell.vpos.x
-          ? 2
-          : 3
+            ? 1
+            : nextCell.vpos.x < cell.vpos.x
+              ? 2
+              : 3
         : -1;
       // 0 -> right, 1 -> down, 2 -> left, 3 -> up, -1 -> none
 
@@ -508,9 +532,8 @@ const renderElements: {
           fill: fill,
           stroke: stroke,
           "stroke-width": swidth,
-          d: `M ${p[0]} L ${p[1]} A ${bw * scale} ${bw * scale} 0 1 0 ${
-            p[2]
-          } L ${p[3]}`,
+          d: `M ${p[0]} L ${p[1]} A ${bw * scale} ${bw * scale} 0 1 0 ${p[2]
+            } L ${p[3]}`,
         });
         return;
       }
@@ -536,26 +559,31 @@ const renderElements: {
 
       createSVGElement("path", "answer", {
         fill: fill,
-        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${
-          p[3]
-        } L ${p[4]} L ${p[5]} L ${p[6]}`,
+        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${p[3]
+          } L ${p[4]} L ${p[5]} L ${p[6]}`,
       });
       createSVGElement("path", "answer", {
         fill: "transparent",
         stroke: stroke,
         "stroke-width": swidth,
-        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${
-          p[3]
-        } M ${p[4]} L ${p[5]} L ${p[6]}`,
+        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${p[3]
+          } M ${p[4]} L ${p[5]} L ${p[6]}`,
       });
     },
   },
 };
 
+
+defineExpose({ renderPuzzle });
+
+watch(() => puzzle, resetPuzzle)
+
 onMounted(() => {
-  let solution = useTemplateRef("solution");
-  if (!solution.value) return;
+  if (!solution.value) {
+    console.log("No SVG found!");
+    return;
+  }
   svg = solution.value;
-  console.log(resetPuzzle, puzzle);
+  resetPuzzle();
 });
 </script>
