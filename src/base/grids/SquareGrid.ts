@@ -1,5 +1,5 @@
 import { PuzzleGrid, GridCell, GridEdge, GridVertex } from "../";
-import Array2D from "../../util/Array2D";
+import Array2D from "../util/Array2D";
 
 export default class SquareGrid extends PuzzleGrid {
   cellmap: Array2D<GridCell>;

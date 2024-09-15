@@ -4,14 +4,13 @@
     "jsx": "preserve",
     "lib": ["DOM", "ESNext"],
     "baseUrl": ".",
-    "outDir": "dist",
+    "outDir": "dist/base",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "paths": {
       "@/*": ["src/*"]
     },
     "resolveJsonModule": true,
-    "types": ["vite/client", "unplugin-vue-router/client"],
     "allowJs": true,
     "strict": true,
     "strictNullChecks": true,
@@ -21,11 +20,6 @@
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "src/**/*.vue"],
-  "exclude": ["dist", "node_modules", "cypress"],
-  "references": [
-    {
-      "path": "./tsconfig.vite.json"
-    }
-  ]
+  "include": ["src/base/**/*"],
+  "exclude": ["dist", "node_modules", "cypress"]
 }

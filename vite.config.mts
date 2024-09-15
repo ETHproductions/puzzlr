@@ -49,7 +49,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          worker: ["./src/web-solver.ts"], // Adjust path if necessary
+          worker: ["./src/web-solver.ts"],
         },
       },
     },
