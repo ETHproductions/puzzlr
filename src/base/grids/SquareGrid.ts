@@ -123,10 +123,10 @@ export default class SquareGrid extends PuzzleGrid {
       for (let x = 0; x <= this.width; x++) {
         // For each possible vertex location:
         const cells =
-          (+(this.areamap.get2D(x - 1, y - 1, null) != null) << 3) |
-          (+(this.areamap.get2D(x, y - 1, null) != null) << 2) |
-          (+(this.areamap.get2D(x - 1, y, null) != null) << 1) |
-          +(this.areamap.get2D(x, y, null) != null);
+          (+(this.areamap.get2DUnsafe(x - 1, y - 1, null) != null) << 3) |
+          (+(this.areamap.get2DUnsafe(x, y - 1, null) != null) << 2) |
+          (+(this.areamap.get2DUnsafe(x - 1, y, null) != null) << 1) |
+          +(this.areamap.get2DUnsafe(x, y, null) != null);
         // If there are no cells touching this vertex, don't create one
         if (!cells) continue;
 
@@ -139,7 +139,7 @@ export default class SquareGrid extends PuzzleGrid {
             this.vertmap.get2D(x, y - 1),
             newVert,
             { d: "v", x, y: y - 1 },
-            false
+            false,
           );
           this.edgemap.vert.set2D(x, y - 1, newEdge);
         }
@@ -150,7 +150,7 @@ export default class SquareGrid extends PuzzleGrid {
             this.vertmap.get2D(x - 1, y),
             newVert,
             { d: "h", x: x - 1, y },
-            !(cells & 0b1000)
+            !(cells & 0b1000),
           );
           this.edgemap.horiz.set2D(x - 1, y, newEdge);
         }

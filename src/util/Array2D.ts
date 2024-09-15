@@ -1,3 +1,7 @@
+/**
+ * Construct representing a rectangular array of data. Width and height cannot
+ * be changed after creation.
+ */
 export default class Array2D<T> {
   #width: number = 0;
   #height: number = 0;
@@ -49,7 +53,7 @@ export default class Array2D<T> {
   static from1D<T>(
     data: T[],
     width: number,
-    height: number = Math.ceil(data.length / width)
+    height: number = Math.ceil(data.length / width),
   ) {
     if (width <= 0 || width % 1 != 0)
       throw new Error("Array2D width must be a positive integer");
@@ -122,28 +126,34 @@ export default class Array2D<T> {
   }
 
   /**
-   * Get an item at a given 2D location in this Array2D. A default return
-   * value can be given for if the requested position is outside the bounds
-   * of the array.
+   * Get the item at a given 2D location in this Array2D. Throws if the
+   * requested location is outside the bounds of the array.
    */
-  get2D(x: number, y: number, def?: any) {
+  get2D(x: number, y: number) {
+    if (this.inBounds2D(x, y)) return this.data[y * this.#width + x];
+    throw new RangeError("Attempted to get value outside bounds of Array2D");
+  }
+  /**
+   * Get the item at a given 2D location in this Array2D, with a default value
+   * returned instead if the requested location is outside the bounds of the
+   * array.
+   */
+  get2DUnsafe<U>(x: number, y: number, def: U) {
     if (this.inBounds2D(x, y)) return this.data[y * this.#width + x];
     return def;
   }
   /**
-   * Set an item at a given 2D location in this Array2D. Returns
-   * true if the location given is in-bounds, false otherwise.
+   * Set the item at a given 2D location in this Array2D. Throws if the
+   * requested location is outside the bounds of the array.
    */
   set2D(x: number, y: number, obj: T) {
-    if (this.inBounds2D(x, y)) {
-      this.data[y * this.#width + x] = obj;
-      return true;
-    }
-    return false;
+    if (this.inBounds2D(x, y)) return (this.data[y * this.#width + x] = obj);
+    throw new RangeError("Attempted to set value outside bounds of Array2D");
   }
 
   /**
-   * Returns true if a given 2D location is in-bounds, false otherwise.
+   * Returns true if a given 2D location is inside the bounds of the array,
+   * false otherwise.
    */
   inBounds2D(x: number, y: number) {
     return x >= 0 && x < this.#width && y >= 0 && y < this.#height;
@@ -181,5 +191,5 @@ export default class Array2D<T> {
 type MapLambda<T> = (
   item: T,
   pos: { x: number; y: number; i: number },
-  arr: Array2D<T>
+  arr: Array2D<T>,
 ) => T;

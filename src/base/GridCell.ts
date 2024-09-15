@@ -53,7 +53,7 @@ export default class GridCell implements PuzzleVariable {
   }
 
   get adjacent() {
-    if (this.#adjacent) return this.#adjacent;
+    if (this.#adjacent.length > 0) return this.#adjacent;
 
     const adjacent = [];
     for (const v of this.verts) {

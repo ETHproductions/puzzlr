@@ -56,7 +56,7 @@ function runPuzzle() {
       " checks / " +
       livePuzzle.base_partsol.deduct_queue.length +
       " deducts / " +
-      livePuzzle.partsols_by_depth.slice(-1)[0].length +
+      livePuzzle.partsols_by_depth.slice(-1)[0]?.length +
       " ps)";
     postMessage({
       status: "update",
@@ -65,7 +65,7 @@ function runPuzzle() {
     });
   };
   options.on_check();
-  livePuzzle.solve();
+  livePuzzle.solve(options);
   console.log(livePuzzle);
   let output =
     livePuzzle.base_partsol.status == "solved"
