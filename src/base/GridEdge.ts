@@ -1,6 +1,6 @@
-import { PuzzleGrid, GridCell, GridVertex } from "./";
-import { Constraint } from "./Constraint";
-import { PuzzleVariable, PuzzleVariableValues } from "./PuzzleVariable";
+import { PuzzleGrid, GridCell, GridVertex } from "./index.js";
+import { Constraint } from "./Constraint.js";
+import { PuzzleVariable, PuzzleVariableValues } from "./PuzzleVariable.js";
 
 export default class GridEdge implements PuzzleVariable {
   grid: PuzzleGrid;
@@ -26,7 +26,7 @@ export default class GridEdge implements PuzzleVariable {
     grid: PuzzleGrid,
     fromVert: GridVertex,
     toVert: GridVertex,
-    vpos: any = null
+    vpos: any = null,
   ) {
     this.grid = grid;
     this.fromVert = fromVert;

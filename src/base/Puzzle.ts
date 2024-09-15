@@ -1,4 +1,12 @@
 /* eslint-disable no-constant-condition */
+import { Constraint, ConstraintCheck } from "./Constraint.js";
+import PuzzleGrid from "./PuzzleGrid.js";
+import {
+  PuzzleVariable,
+  PuzzleVariableValue,
+  PuzzleVariableValues,
+} from "./PuzzleVariable.js";
+
 /**
  * The Puzzle class is the main entrypoint to the solving algorithm. A Puzzle
  * is initiated with a set of variables that need to be solved, and a set of
@@ -6,15 +14,6 @@
  * theoretically be represented and solved with a generic algorithm. In prac-
  * tice, however, some puzzles play more nicely with this system than others.
  */
-
-import { Constraint, ConstraintCheck } from "./Constraint";
-import PuzzleGrid from "./PuzzleGrid";
-import {
-  PuzzleVariable,
-  PuzzleVariableValue,
-  PuzzleVariableValues,
-} from "./PuzzleVariable";
-
 export default class Puzzle {
   grid: PuzzleGrid;
   options: any;

@@ -4,7 +4,7 @@
     "jsx": "preserve",
     "lib": ["DOM", "ESNext"],
     "baseUrl": ".",
-    "outDir": "dist/base",
+    "outDir": "lib/base",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "paths": {

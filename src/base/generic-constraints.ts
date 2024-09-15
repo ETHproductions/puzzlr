@@ -1,6 +1,6 @@
-import { GridCell } from ".";
-import GridEdge from "./GridEdge";
-import { PuzzleVariable, PuzzleVariableValue } from "./PuzzleVariable";
+import { GridCell } from "./index.js";
+import GridEdge from "./GridEdge.js";
+import { PuzzleVariable, PuzzleVariableValue } from "./PuzzleVariable.js";
 
 function find_sums(vars: PuzzleVariable[]) {
   let sums = new Set([0]);
@@ -23,7 +23,7 @@ export function SUM_EQUALS_ANY(vars: PuzzleVariable[], target: number[]) {
 export function SUM_EQUALS_IF(
   [var1, ...vars]: PuzzleVariable[],
   var_target: PuzzleVariableValue,
-  sum_target: number
+  sum_target: number,
 ) {
   if (var1.value.length > 1 || var1.value[0] != var_target) return true;
   return SUM_EQUALS(vars, sum_target);
@@ -31,7 +31,7 @@ export function SUM_EQUALS_IF(
 
 export function CONTAINS_ALL(
   vars: PuzzleVariable[],
-  target: PuzzleVariableValue[]
+  target: PuzzleVariableValue[],
 ) {
   let sets = new Set([0]);
   for (const v of vars) {
@@ -50,7 +50,7 @@ export function CONTAINS_ALL(
 export function CONTIG_EDGE_ALL(
   edges: GridEdge[],
   target: PuzzleVariableValue,
-  start: GridEdge
+  start: GridEdge,
 ) {
   // Strategy: run this check every time an edge has its value changed.
 
@@ -63,7 +63,7 @@ export function CONTIG_EDGE_ALL(
     const check_queue = [start.fromVert, start.toVert];
     if (
       !edges.some(
-        (e) => e.value.length == 1 && e.value[0] == target && e != start
+        (e) => e.value.length == 1 && e.value[0] == target && e != start,
       )
     )
       return true;
@@ -128,7 +128,7 @@ CONTIG_EDGE_ALL.global = true;
 export function CONTIG_CELL_ALL(
   cells: GridCell[],
   target: PuzzleVariableValue,
-  start: GridCell
+  start: GridCell,
 ) {
   // Strategy: run this check every time an cell has its value changed.
 
@@ -141,7 +141,7 @@ export function CONTIG_CELL_ALL(
     const check_queue = [...start.adjacentEdge];
     if (
       !cells.some(
-        (c) => c.value.length == 1 && c.value[0] == target && c != start
+        (c) => c.value.length == 1 && c.value[0] == target && c != start,
       )
     )
       return true;
@@ -177,15 +177,15 @@ export function CONTIG_CELL_ALL(
       if (check_queue.length == 0) {
         if (
           [...found].some(
-            (cell) => cell.value.length == 1 && cell.value[0] == target
+            (cell) => cell.value.length == 1 && cell.value[0] == target,
           )
         ) {
           if (
             found_branch ||
             paths.some((p) =>
               [...p.found].some(
-                (c) => c.value.length == 1 && c.value[0] == target
-              )
+                (c) => c.value.length == 1 && c.value[0] == target,
+              ),
             )
           ) {
             // there are 2 separate branches with solid cells

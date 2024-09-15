@@ -1,4 +1,4 @@
-import { GridCell, GridEdge, GridVertex } from "./";
+import { GridCell, GridEdge, GridVertex } from "./index.js";
 
 /**
  * How to make a custom puzzle grid

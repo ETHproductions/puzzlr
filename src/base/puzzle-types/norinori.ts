@@ -1,6 +1,6 @@
-import Puzzle from "../Puzzle";
-import { SUM_EQUALS, SUM_EQUALS_IF } from "../generic-constraints";
-import SquareGrid from "../grids/SquareGrid";
+import Puzzle from "../Puzzle.js";
+import { SUM_EQUALS, SUM_EQUALS_IF } from "../generic-constraints.js";
+import SquareGrid from "../grids/SquareGrid.js";
 
 class NorinoriPuzzle extends Puzzle {
   static get type() {

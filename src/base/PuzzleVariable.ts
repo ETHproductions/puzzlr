@@ -1,4 +1,4 @@
-import { Constraint } from "./Constraint";
+import { Constraint } from "./Constraint.js";
 
 export interface PuzzleVariable {
   var_id: number;

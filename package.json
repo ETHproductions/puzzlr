@@ -9,6 +9,7 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
+    "build-node": "tsc --project tsconfig.npm.json",
     "lint": "eslint . --fix --ignore-path .gitignore"
   },
   "bin": "./index.js",

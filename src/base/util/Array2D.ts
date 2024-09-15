@@ -166,7 +166,13 @@ export default class Array2D<T> {
    * 2. the location itself, with 2D position as .x/.y and 1D index as .i
    * 3. this Array2D
    */
-  modify(func: MapLambda<T>) {
+  modify(
+    func: (
+      item: T,
+      pos: { x: number; y: number; i: number },
+      arr: Array2D<T>,
+    ) => T,
+  ) {
     for (let y = 0; y < this.#height; y++)
       for (let x = 0; x < this.#width; x++) {
         const i = y * this.#width + x;
@@ -181,15 +187,19 @@ export default class Array2D<T> {
    * 2. the location itself, with 2D position as .x/.y and 1D index as .i
    * 3. the cloned Array2D
    */
-  map(func: MapLambda<T>) {
-    const arr = this.clone();
-    arr.modify(func);
+  map<U>(
+    func: (
+      item: T,
+      pos: { x: number; y: number; i: number },
+      arr: Array2D<T>,
+    ) => U,
+  ) {
+    const arr = new Array2D<U>(this.width, this.height);
+    for (let y = 0; y < this.#height; y++)
+      for (let x = 0; x < this.#width; x++) {
+        const i = y * this.#width + x;
+        arr.data[i] = func(this.data[i], { x, y, i }, this);
+      }
     return arr;
   }
 }
-
-type MapLambda<T> = (
-  item: T,
-  pos: { x: number; y: number; i: number },
-  arr: Array2D<T>,
-) => T;
