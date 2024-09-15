@@ -6,9 +6,11 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let puzzletypes = [], test_cases = {};
+import puzzleMap from './lib/base/puzzle-types/index.js';
 
-let type, filename, max_depth = 2, mode = 'fast';
+let puzzletypes = [...puzzleMap.keys()], test_cases = {};
+
+let max_depth = 2, mode = 'fast';
 
 for (let i = 2; i < process.argv.length; i++) {
     let arg = process.argv[i];
@@ -19,28 +21,21 @@ for (let i = 2; i < process.argv.length; i++) {
         }
     }
     else {
-        if (puzzletypes.length == 0) {
-            puzzletypes.push(arg);
-        }
-        else if (filename === undefined) {
-            if (arg.includes('/') || arg.includes('.json'))
-                filename = arg;
-            else
-                filename = `${ __dirname }\\src\\test\\${ type }\\${ arg }.json`;
+        if (puzzleMap.has(arg)) {
+            puzzletypes = [arg];
+        } else {
+            console.error('Error: Invalid puzzle type:', arg);
+            puzzletypes = [];
         }
     }
 }
 
-if (puzzletypes.length == 0) {
-    readdirSync(__dirname).forEach(folder => {
-        if (/\.js$/i.test(folder)) return;
-        puzzletypes.push(folder);
-    });
+if (puzzletypes.length != 0) {
     console.log('Found', puzzletypes.length, 'puzzle types');
 }
 for (let type of puzzletypes) {
     test_cases[type] = [];
-    readdirSync(__dirname + '\\' + type).forEach(file => {
+    readdirSync(__dirname + '\\src\\test\\' + type).forEach(file => {
         test_cases[type].push(file);
     });
     test_cases[type].sort((a, b) => {
@@ -59,9 +54,9 @@ function failPuzzle(name, reason) {
 for (let type of puzzletypes) {
     console.log('Testing', type);
     let PuzzleType;
-    try {
-        PuzzleType = (await import('file:\\\\' + __dirname + `\\..\\puzzles\\${type}.js`)).default;
-    } catch(e) {
+    if (puzzleMap.has(type)) {
+        PuzzleType = puzzleMap.get(type);
+    } else {
         console.error('Error: Invalid puzzle type:', type);
         continue;
     }
@@ -69,7 +64,7 @@ for (let type of puzzletypes) {
     for (let test_case of test_cases[type]) {
         console.log('  Testing', test_case);
         puzzle_stats.total++;
-        let filename = __dirname + '\\' + type + '\\' + test_case;
+        let filename = __dirname + '\\src\\test\\' + type + '\\' + test_case;
         let puzzleData;
         try {
             puzzleData = JSON.parse(readFileSync(filename, 'utf8')).puzzle;
