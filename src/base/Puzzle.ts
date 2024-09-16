@@ -73,22 +73,19 @@ export default class Puzzle {
    * @param variables array of variables on which to apply this constraint
    * @param target value to pass into the check function
    */
-  addConstraint(
-    check: ConstraintCheck,
-    variables: PuzzleVariable[],
+  addConstraint<T extends PuzzleVariable>(
+    check: ConstraintCheck<T>,
+    variables: T[],
     ...targets: any[]
   ) {
-    const constraint = {
-      id: this.constraints.length,
+    const constraint = Constraint.build(
+      this.constraints.length,
       check,
       variables,
       targets,
-    };
+    );
     this.constraints.push(constraint);
-    for (const variable of variables) {
-      if (variable.constraints == undefined) variable.constraints = [];
-      variable.constraints.push(constraint);
-    }
+    for (const variable of variables) variable.constraints.push(constraint);
   }
 
   debug_log(debug_level: number, ...args: any[]) {
@@ -120,7 +117,7 @@ export default class Puzzle {
       .map((v) => (v.vpos ? "V" : "S") + v.var_id)
       .join(", ");
     if (constraint.variables.length > 5) varstring += ", ...";
-    return `C${constraint.id} #${constraint.check.name} ${constraint.targets} (${varstring})`;
+    return `C${constraint.id} #${constraint.name} ${constraint.targets} (${varstring})`;
   }
 
   /**
@@ -250,7 +247,7 @@ export default class Puzzle {
     if (
       this.options.mode == "thorough" &&
       values.length == 1 &&
-      !constraint.check.global
+      !constraint.global
     )
       return true;
     this.debug_log(3, () => [
@@ -263,10 +260,7 @@ export default class Puzzle {
     for (const value of values) {
       variable.value = [value];
       this.global_stats.total_constraint_checks++;
-      if (
-        constraint.check(constraint.variables, ...constraint.targets, variable)
-      )
-        continue;
+      if (constraint.runCheck(variable)) continue;
       if (
         this.ps.deduct_queue.find(
           (d) => d.variable == variable && d.value == value,
@@ -370,7 +364,7 @@ export default class Puzzle {
     }
 
     for (const constraint of variable.constraints)
-      for (const subvar of constraint.check.global
+      for (const subvar of constraint.global
         ? [variable]
         : constraint.variables.filter((v) => v.value.length > 1))
         if (
