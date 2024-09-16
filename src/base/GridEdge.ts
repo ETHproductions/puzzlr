@@ -7,7 +7,11 @@ export default class GridEdge implements PuzzleVariable {
   fromVert: GridVertex;
   toVert: GridVertex;
   slope: number;
-  vpos: { x: number; y: number; d: string | number };
+  vpos: { x: number; y: number; d: string | number } = {
+    x: NaN,
+    y: NaN,
+    d: NaN,
+  };
   id: number;
   leftCell: GridCell | null = null;
   rightCell: GridCell | null = null;
@@ -24,13 +28,13 @@ export default class GridEdge implements PuzzleVariable {
     grid: PuzzleGrid,
     fromVert: GridVertex,
     toVert: GridVertex,
-    vpos: { x: number; y: number; d: string | number },
+    vpos?: { x: number; y: number; d: string | number },
   ) {
     this.grid = grid;
     this.fromVert = fromVert;
     this.toVert = toVert;
     this.slope = fromVert.angleTo(toVert);
-    this.vpos = vpos;
+    if (vpos) this.vpos = vpos;
 
     this.id = grid.edges.length;
     grid.edges.push(this);

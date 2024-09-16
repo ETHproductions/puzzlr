@@ -6,7 +6,7 @@ export default class GridCell implements PuzzleVariable {
   grid: PuzzleGrid;
   verts: GridVertex[];
   edges: GridEdge[] = [];
-  vpos: { x: number; y: number };
+  vpos: { x: number; y: number } = { x: NaN, y: NaN };
   id: number;
 
   var_id: number = -1;
@@ -18,7 +18,7 @@ export default class GridCell implements PuzzleVariable {
   #adjacent: { cell: GridCell; type: string }[] = [];
   area_id: any;
 
-  hint?: number;
+  hint?: number | string;
   thermoIndex?: number;
 
   /**
@@ -27,7 +27,7 @@ export default class GridCell implements PuzzleVariable {
   constructor(
     grid: PuzzleGrid,
     verts: GridVertex[],
-    vpos: { x: number; y: number },
+    vpos?: { x: number; y: number },
   ) {
     if (verts.length < 3)
       throw new Error("Cell must contain at least 3 vertices");
@@ -37,7 +37,7 @@ export default class GridCell implements PuzzleVariable {
     for (let i = 0; i < verts.length; i++)
       this.edges.push(this.grid.getEdge(verts[i], verts[i + 1] || verts[0])!);
 
-    this.vpos = vpos;
+    if (vpos) this.vpos = vpos;
 
     this.id = grid.cells.length;
     grid.cells.push(this);

@@ -2,7 +2,7 @@ import Puzzle from "../Puzzle.js";
 import { SUM_EQUALS, SUM_EQUALS_IF } from "../generic-constraints.js";
 import SquareGrid from "../grids/SquareGrid.js";
 
-class NorinoriPuzzle extends Puzzle {
+export default class NorinoriPuzzle extends Puzzle {
   static get type() {
     return "norinori";
   }
@@ -30,5 +30,3 @@ class NorinoriPuzzle extends Puzzle {
     }
   }
 }
-
-export default NorinoriPuzzle;

@@ -228,6 +228,7 @@ export function CONTIG_CELL_ALL(
       }
       paths.push({ check_queue, found });
     }
-  } else return true;
+  }
+  return true;
 }
 CONTIG_CELL_ALL.global = true;
