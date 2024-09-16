@@ -27,6 +27,15 @@ export class Constraint {
   constructor(id: number) {
     this.id = id;
   }
+
+  toString() {
+    let varstring = this.variables
+      .slice(0, 5)
+      .map((v) => (v.vpos ? "V" : "S") + v.var_id)
+      .join(", ");
+    if (this.variables.length > 5) varstring += ", ...";
+    return `C${this.id} #${this.name} ${this.targets} (${varstring})`;
+  }
 }
 export type ConstraintCheck<T extends PuzzleVariable> = ((
   variables: T[],

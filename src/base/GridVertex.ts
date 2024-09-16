@@ -5,7 +5,7 @@ import { PuzzleVariable, PuzzleVariableValues } from "./PuzzleVariable.js";
 export default class GridVertex implements PuzzleVariable {
   grid: PuzzleGrid;
   rpos: { x: number; y: number };
-  vpos: any;
+  vpos: { x: number; y: number };
   id: number;
   netid: number;
   cells: (GridCell | null)[] = [];
@@ -27,7 +27,7 @@ export default class GridVertex implements PuzzleVariable {
   constructor(
     grid: PuzzleGrid,
     rpos: { x: number; y: number },
-    vpos: object = rpos,
+    vpos: { x: number; y: number } = rpos,
   ) {
     this.grid = grid;
     this.rpos = rpos;
@@ -36,6 +36,10 @@ export default class GridVertex implements PuzzleVariable {
     this.id = grid.verts.length;
     grid.verts.push(this);
     this.netid = this.id;
+  }
+  toString() {
+    if (this.vpos) return `V${this.var_id} @(${this.vpos.x},${this.vpos.y})`;
+    return `S${this.var_id}`;
   }
 
   /**

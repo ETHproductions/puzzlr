@@ -6,7 +6,7 @@ export default class GridCell implements PuzzleVariable {
   grid: PuzzleGrid;
   verts: GridVertex[];
   edges: GridEdge[] = [];
-  vpos: any;
+  vpos: { x: number; y: number };
   id: number;
 
   var_id: number = -1;
@@ -23,13 +23,12 @@ export default class GridCell implements PuzzleVariable {
 
   /**
    * Creates a new grid cell out of a list of vertices.
-   * @param {PuzzleGrid} grid the grid this cell belongs to
-   * @param {GridVertex[]} verts vertices comprising the corners of the cell,
-   * clockwise starting with the lowest ID
-   * @param {Object} vpos virtual position for simplfying non-square grids;
-   * can be anything but recommended to be integer {x, y}
    */
-  constructor(grid: PuzzleGrid, verts: GridVertex[], vpos: any = null) {
+  constructor(
+    grid: PuzzleGrid,
+    verts: GridVertex[],
+    vpos: { x: number; y: number },
+  ) {
     if (verts.length < 3)
       throw new Error("Cell must contain at least 3 vertices");
 
@@ -42,6 +41,10 @@ export default class GridCell implements PuzzleVariable {
 
     this.id = grid.cells.length;
     grid.cells.push(this);
+  }
+
+  toString() {
+    return `V${this.var_id} @(${this.vpos.x},${this.vpos.y})`;
   }
 
   /**

@@ -103,23 +103,6 @@ export default class Puzzle {
     console.log.apply(null, args);
   }
 
-  format_var(variable: PuzzleVariable) {
-    if (variable.vpos)
-      return `V${variable.var_id} @${variable.vpos.d ?? ""}(${
-        variable.vpos.x
-      },${variable.vpos.y})`;
-    return `S${variable.var_id}`;
-  }
-
-  format_con(constraint: Constraint) {
-    let varstring = constraint.variables
-      .slice(0, 5)
-      .map((v) => (v.vpos ? "V" : "S") + v.var_id)
-      .join(", ");
-    if (constraint.variables.length > 5) varstring += ", ...";
-    return `C${constraint.id} #${constraint.name} ${constraint.targets} (${varstring})`;
-  }
-
   /**
    * Once the puzzle has been set up, all that's left to do is solve it.
    * There are multiple ways of going about a solve, all using the same algo-
@@ -252,9 +235,9 @@ export default class Puzzle {
       return true;
     this.debug_log(3, () => [
       " Checking",
-      this.format_var(variable),
+      variable.toString(),
       "on",
-      this.format_con(constraint),
+      constraint.toString(),
     ]);
 
     for (const value of values) {
@@ -270,11 +253,11 @@ export default class Puzzle {
 
       this.ps.deduct_queue.push({ variable, value, constraint });
       this.debug_log(1, () => [
-        " " + this.format_var(variable),
+        " " + variable.toString(),
         "with value",
         value,
         "fails",
-        this.format_con(constraint),
+        constraint.toString(),
       ]);
       if (
         values.every(
@@ -313,7 +296,7 @@ export default class Puzzle {
     if (variable.value.indexOf(deduction.value) == -1) {
       this.debug_log(1, () => [
         "Warning:",
-        this.format_var(variable),
+        variable.toString(),
         "has already had value",
         deduction.value,
         "deducted",
@@ -327,7 +310,7 @@ export default class Puzzle {
         "Deduction",
         deduction.id,
         ":",
-        this.format_var(variable),
+        variable.toString(),
         "removing value",
         deduction.value,
       ]);
@@ -336,12 +319,12 @@ export default class Puzzle {
         "Deduction",
         deduction.id,
         ":",
-        this.format_var(variable),
+        variable.toString(),
         "cannot have value",
         deduction.value,
         "due to",
         deduction.constraint
-          ? this.format_con(deduction.constraint)
+          ? deduction.constraint.toString()
           : "future contradiction",
       ]);
     variable.value.splice(variable.value.indexOf(deduction.value), 1);
@@ -349,7 +332,7 @@ export default class Puzzle {
       this.options.on_deduct(deduction);
     if (variable.value.length == 1) {
       this.debug_log(1, () => [
-        "  " + this.format_var(variable),
+        "  " + variable.toString(),
         "has value",
         variable.value[0],
       ]);
@@ -490,7 +473,7 @@ export default class Puzzle {
         this.debug_log(2, () => [
           "Contradiction in {",
           new_partsol.assumptions
-            .map((a) => this.format_var(a.variable) + " => " + a.value)
+            .map((a) => a.variable.toString() + " => " + a.value)
             .join("; "),
           "}",
         ]);
@@ -500,7 +483,7 @@ export default class Puzzle {
         this.debug_log(2, () => [
           "Done with {",
           new_partsol.assumptions
-            .map((a) => this.format_var(a.variable) + " => " + a.value)
+            .map((a) => a.variable.toString() + " => " + a.value)
             .join("; "),
           "}",
         ]);
@@ -611,12 +594,6 @@ class PartialSolution {
     this.puzzle.debug_log(debug_level, ...args);
     this.puzzle.ps = b;
   }
-  format_var(variable: PuzzleVariable) {
-    return this.puzzle.format_var(variable);
-  }
-  format_con(constraint: Constraint) {
-    return this.puzzle.format_con(constraint);
-  }
 
   merge_from_parents() {
     const all_partsols = [...this.parents, this];
@@ -631,7 +608,7 @@ class PartialSolution {
       this.debug_log(2, () => [
         "Rebasing on {",
         new_base.assumptions
-          .map((a) => this.format_var(a.variable) + " => " + a.value)
+          .map((a) => a.variable.toString() + " => " + a.value)
           .join("; ") || "root",
         "}",
       ]);
@@ -672,7 +649,7 @@ class PartialSolution {
       this.debug_log(2, () => [
         "Universal contradiction found in {",
         this.assumptions
-          .map((a) => this.format_var(a.variable) + " => " + a.value)
+          .map((a) => a.variable.toString() + " => " + a.value)
           .join("; "),
         "}",
       ]);
@@ -708,7 +685,7 @@ class PartialSolution {
         shared_assumptions
           .map(
             (a) =>
-              this.format_var(a.variable) +
+              a.variable.toString() +
               (a.value == undefined ? "" : " => " + a.value),
           )
           .join("; "),

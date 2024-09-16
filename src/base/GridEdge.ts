@@ -7,7 +7,7 @@ export default class GridEdge implements PuzzleVariable {
   fromVert: GridVertex;
   toVert: GridVertex;
   slope: number;
-  vpos: any;
+  vpos: { x: number; y: number; d: string | number };
   id: number;
   leftCell: GridCell | null = null;
   rightCell: GridCell | null = null;
@@ -19,14 +19,12 @@ export default class GridEdge implements PuzzleVariable {
 
   /**
    * Creates a new grid edge between two vertices.
-   * @param vpos virtual position for simplfying non-square grids;
-   * can be anything but recommended to be integer {x, y}
    */
   constructor(
     grid: PuzzleGrid,
     fromVert: GridVertex,
     toVert: GridVertex,
-    vpos: any = null,
+    vpos: { x: number; y: number; d: string | number },
   ) {
     this.grid = grid;
     this.fromVert = fromVert;
@@ -36,6 +34,10 @@ export default class GridEdge implements PuzzleVariable {
 
     this.id = grid.edges.length;
     grid.edges.push(this);
+  }
+
+  toString() {
+    return `V${this.var_id} @${this.vpos.d}(${this.vpos.x},${this.vpos.y})`;
   }
 
   /**
