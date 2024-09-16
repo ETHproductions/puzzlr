@@ -31,7 +31,7 @@ export class Constraint {
   toString() {
     let varstring = this.variables
       .slice(0, 5)
-      .map((v) => (v.vpos ? "V" : "S") + v.var_id)
+      .map((v) => "V" + v.var_id)
       .join(", ");
     if (this.variables.length > 5) varstring += ", ...";
     return `C${this.id} #${this.name} ${this.targets} (${varstring})`;

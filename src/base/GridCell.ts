@@ -1,18 +1,12 @@
 import { PuzzleGrid, GridEdge, GridVertex } from "./index.js";
-import { Constraint } from "./Constraint.js";
-import { PuzzleVariable, PuzzleVariableValues } from "./PuzzleVariable.js";
+import { PuzzleVariable } from "./PuzzleVariable.js";
 
-export default class GridCell implements PuzzleVariable {
+export default class GridCell extends PuzzleVariable {
   grid: PuzzleGrid;
   verts: GridVertex[];
   edges: GridEdge[] = [];
   vpos: { x: number; y: number } = { x: NaN, y: NaN };
   id: number;
-
-  var_id: number = -1;
-  value: PuzzleVariableValues = [];
-  constraints: Constraint[] = [];
-  must_be_unique: boolean | undefined;
 
   // Cache of adjacent cells, in format { cell, type: 'edge' | 'vert' }
   #adjacent: { cell: GridCell; type: string }[] = [];
@@ -29,6 +23,7 @@ export default class GridCell implements PuzzleVariable {
     verts: GridVertex[],
     vpos?: { x: number; y: number },
   ) {
+    super();
     if (verts.length < 3)
       throw new Error("Cell must contain at least 3 vertices");
 

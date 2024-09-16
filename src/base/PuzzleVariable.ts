@@ -1,14 +1,12 @@
 import { Constraint } from "./Constraint.js";
 
 export class PuzzleVariable {
-  var_id: number;
+  var_id: number = -1;
   value: PuzzleVariableValues;
   constraints: Constraint[] = [];
-  must_be_unique: boolean | undefined;
-  vpos: any;
+  must_be_unique: boolean = true;
 
-  constructor(var_id: number, value: PuzzleVariableValues) {
-    this.var_id = var_id;
+  constructor(value: PuzzleVariableValues = []) {
     this.value = value;
   }
 

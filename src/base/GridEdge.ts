@@ -1,8 +1,7 @@
 import { PuzzleGrid, GridCell, GridVertex } from "./index.js";
-import { Constraint } from "./Constraint.js";
-import { PuzzleVariable, PuzzleVariableValues } from "./PuzzleVariable.js";
+import { PuzzleVariable } from "./PuzzleVariable.js";
 
-export default class GridEdge implements PuzzleVariable {
+export default class GridEdge extends PuzzleVariable {
   grid: PuzzleGrid;
   fromVert: GridVertex;
   toVert: GridVertex;
@@ -16,11 +15,6 @@ export default class GridEdge implements PuzzleVariable {
   leftCell: GridCell | null = null;
   rightCell: GridCell | null = null;
 
-  var_id: number = -1;
-  value: PuzzleVariableValues = [];
-  constraints: Constraint[] = [];
-  must_be_unique: boolean | undefined;
-
   /**
    * Creates a new grid edge between two vertices.
    */
@@ -30,6 +24,7 @@ export default class GridEdge implements PuzzleVariable {
     toVert: GridVertex,
     vpos?: { x: number; y: number; d: string | number },
   ) {
+    super();
     this.grid = grid;
     this.fromVert = fromVert;
     this.toVert = toVert;

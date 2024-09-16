@@ -5,7 +5,7 @@ import { CONTIG_CELL_ALL } from "../generic-constraints.js";
 import SquareGrid from "../grids/SquareGrid.js";
 
 export default class YinYangPuzzle extends Puzzle {
-  get type() {
+  static get type() {
     return "yin-yang";
   }
   get renderSettings() {

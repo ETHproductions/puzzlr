@@ -93,10 +93,7 @@ export default class Puzzle {
     if (typeof args[0] == "function") args = args[0]();
     args[0] =
       this.ps.assumptions
-        .map(
-          (x) =>
-            (x.variable.vpos ? "V" : "S") + x.variable.var_id + "=" + x.value,
-        )
+        .map((x) => "V" + x.variable.var_id + "=" + x.value)
         .join(";") +
       " " +
       args[0];

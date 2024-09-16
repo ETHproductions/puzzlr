@@ -5,7 +5,7 @@ import { SUM_EQUALS } from "../generic-constraints.js";
 import SquareGrid from "../grids/SquareGrid.js";
 
 export default class ThermometersPuzzle extends Puzzle {
-  get type() {
+  static get type() {
     return "thermometers";
   }
   get renderSettings() {
@@ -35,17 +35,17 @@ export default class ThermometersPuzzle extends Puzzle {
     this.structures = { thermo: [] };
 
     const THERMO_LENGTH = function (
-      [thermo, cell]: [Thermo, GridCell],
+      [thermo, cell]: PuzzleVariable[],
       target: number,
     ) {
-      if (cell.value.includes(0) && thermo.value.some((v) => v <= target))
+      if (cell.value.includes(0) && thermo.value.some((v) => +v <= target))
         return true;
-      if (cell.value.includes(1) && thermo.value.some((v) => v > target))
+      if (cell.value.includes(1) && thermo.value.some((v) => +v > target))
         return true;
       return false;
     };
     for (const area of thermometers) {
-      const thermo: Thermo = { vars: [], value: [] };
+      const thermo: Thermo = new Thermo();
       this.addVariable(thermo, [0], false);
       for (const pos of area) {
         const cell = _grid.cellmap.get2D(pos.x, pos.y);
@@ -67,7 +67,6 @@ export default class ThermometersPuzzle extends Puzzle {
   }
 }
 
-interface Thermo extends PuzzleVariable {
-  vars: GridCell[];
-  value: number[];
+export class Thermo extends PuzzleVariable {
+  vars: GridCell[] = [];
 }
