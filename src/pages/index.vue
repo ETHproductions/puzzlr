@@ -30,7 +30,7 @@ import { ref } from "vue";
 
 let puzzleData: any = null;
 let puzzleType: any = null;
-const livePuzzle = ref<Puzzle | null>(null);
+let livePuzzle: Puzzle | null = null;
 let puzzleOptions: object = {};
 let renderMessage: any = null;
 let puzzleReady = ref<boolean>(false);
@@ -79,7 +79,7 @@ const changeFile = (e: any) => {
     }
 
     try {
-      livePuzzle.value = new puzzleType(puzzleData);
+      livePuzzle = new puzzleType(puzzleData);
       puzzleWorker.postMessage({ command: "load", data: puzzleData });
       console.log("Data loaded.");
     } catch (e) {
@@ -116,7 +116,7 @@ const renderPuzzle = () => {
   renderMessage = null;
   let answer: PuzzleVariableValues[] = e.data.answer;
   answer.forEach((v, i) => {
-    livePuzzle.value!.variables[i].value = v;
+    livePuzzle!.variables[i].value = v;
   });
   renderedGrid.value.renderPuzzle();
   statusText.value = e.data.output;
