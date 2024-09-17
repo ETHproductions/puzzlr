@@ -26,15 +26,14 @@ export default class SlitherlinkPuzzle extends Puzzle {
     const _grid = SquareGrid.fromSize(grid.width, grid.height);
     super(_grid);
 
-    function DIFF_EQUALS([edge, cell1, cell2]: PuzzleVariable[]) {
-      const val1 = cell1.value;
-      const val2 = cell2 ? cell2.value : [0];
-      if (edge.value.includes(0) && val1.some((v) => val2.includes(v)))
+    function DIFF_EQUALS([
+      edge,
+      cell1,
+      cell2 = new PuzzleVariable([0]),
+    ]: PuzzleVariable[]) {
+      if (edge.valueHas(0) && cell1.value.some((v) => cell2.valueHas(v)))
         return true;
-      if (
-        edge.value.includes(1) &&
-        val1.some((v) => val2.length != 1 || val2[0] != v)
-      )
+      if (edge.valueHas(1) && cell1.value.some((v) => !cell2.valueIs(v)))
         return true;
       return false;
     }
