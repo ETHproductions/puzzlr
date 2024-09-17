@@ -38,9 +38,9 @@ export default class ThermometersPuzzle extends Puzzle {
       [thermo, cell]: PuzzleVariable[],
       target: number,
     ) {
-      if (cell.value.includes(0) && thermo.value.some((v) => +v <= target))
+      if (cell.valueHas(0) && thermo.value.some((v) => +v <= target))
         return true;
-      if (cell.value.includes(1) && thermo.value.some((v) => +v > target))
+      if (cell.valueHas(1) && thermo.value.some((v) => +v > target))
         return true;
       return false;
     };

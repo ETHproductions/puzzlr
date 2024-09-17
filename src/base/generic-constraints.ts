@@ -58,15 +58,10 @@ export function CONTIG_EDGE_ALL(
   // still connected to at least one other edge with only the target value
   // (let's call this a "solid" edge).
   // Works because all existing solid edges must have been validated already.
-  if (start.value.length == 1 && start.value[0] == target) {
+  if (start.valueIs(target)) {
     const found = new Set([start]);
     const check_queue = [start.fromVert, start.toVert];
-    if (
-      !edges.some(
-        (e) => e.value.length == 1 && e.value[0] == target && e != start,
-      )
-    )
-      return true;
+    if (!edges.some((e) => e.valueIs(target) && e != start)) return true;
 
     // This branch only exists to rule out a potential loop in the puzzle
     // completely disconnected from the main loop, see: slitherlink/5x5-test
@@ -76,8 +71,8 @@ export function CONTIG_EDGE_ALL(
       for (const edge of nextVert.edges) {
         if (!edges.includes(edge)) continue;
         if (found.has(edge)) continue;
-        if (!edge.value.includes(target)) continue;
-        if (edge.value.length == 1 && edge.value[0] == target) return true;
+        if (!edge.valueHas(target)) continue;
+        if (edge.valueIs(target)) return true;
         found.add(edge);
         const otherVert = edge.otherVert(nextVert);
         if (!check_queue.includes(otherVert)) check_queue.push(otherVert);
@@ -88,7 +83,7 @@ export function CONTIG_EDGE_ALL(
 
   // If an edge had the target value removed, start at both vertices and
   // expand alternatingly until a connection is found between the branches.
-  else if (!start.value.includes(target)) {
+  else if (!start.valueHas(target)) {
     // Future work: this will run multiple times if there are multiple non-target values
     const paths = [
       { check_queue: [start.fromVert], found: new Set<GridEdge>([]) },
@@ -100,7 +95,7 @@ export function CONTIG_EDGE_ALL(
       for (const edge of nextVert.edges) {
         if (!edges.includes(edge)) continue;
         if (found.has(edge)) continue;
-        if (!edge.value.includes(target)) continue;
+        if (!edge.valueHas(target)) continue;
         if (paths[0].found.has(edge)) return true;
         found.add(edge);
         const otherVert = edge.otherVert(nextVert);
@@ -114,12 +109,10 @@ export function CONTIG_EDGE_ALL(
     // remaining solid edges, we're still good (but that branch will need
     // to disappear).
     let edges_found = 0;
-    for (const edge of paths[0].found)
-      if (edge.value.length == 1 && edge.value[0] == target) edges_found++;
+    for (const edge of paths[0].found) if (edge.valueIs(target)) edges_found++;
     return (
       edges_found == 0 ||
-      edges_found ==
-        edges.filter((e) => e.value.length == 1 && e.value[0] == target).length
+      edges_found == edges.filter((e) => e.valueIs(target)).length
     );
   } else return true;
 }
@@ -136,24 +129,18 @@ export function CONTIG_CELL_ALL(
   // still connected to at least one other cell with only the target value
   // (let's call this a "solid" cell).
   // Works because all existing solid cells must have been validated already.
-  if (start.value.length == 1 && start.value[0] == target) {
+  if (start.valueIs(target)) {
     const found = new Set([start]);
     const check_queue = [...start.adjacentEdge];
-    if (
-      !cells.some(
-        (c) => c.value.length == 1 && c.value[0] == target && c != start,
-      )
-    )
-      return true;
+    if (!cells.some((c) => c.valueIs(target) && c != start)) return true;
 
     // This branch exists to rule out islands
     while (check_queue.length > 0) {
       const nextCell = check_queue.pop()!;
       if (!cells.includes(nextCell)) continue;
       if (found.has(nextCell)) continue;
-      if (!nextCell.value.includes(target)) continue;
-      if (nextCell.value.length == 1 && nextCell.value[0] == target)
-        return true;
+      if (!nextCell.valueHas(target)) continue;
+      if (nextCell.valueIs(target)) return true;
       found.add(nextCell);
       for (const otherCell of nextCell.adjacentEdge) {
         if (!check_queue.includes(otherCell)) check_queue.push(otherCell);
@@ -164,7 +151,7 @@ export function CONTIG_CELL_ALL(
 
   // If an cell had the target value removed, start at its adjacent and
   // expand alternatingly until a connection is found between the branches.
-  else if (!start.value.includes(target)) {
+  else if (!start.valueHas(target)) {
     // Future work: this will run multiple times if there are multiple non-target values
     const paths = start.adjacentEdge.map((c) => ({
       check_queue: [c],
@@ -175,18 +162,10 @@ export function CONTIG_CELL_ALL(
     main: while (paths.length > 0) {
       const { check_queue, found } = paths.shift()!;
       if (check_queue.length == 0) {
-        if (
-          [...found].some(
-            (cell) => cell.value.length == 1 && cell.value[0] == target,
-          )
-        ) {
+        if ([...found].some((cell) => cell.valueIs(target))) {
           if (
             found_branch ||
-            paths.some((p) =>
-              [...p.found].some(
-                (c) => c.value.length == 1 && c.value[0] == target,
-              ),
-            )
+            paths.some((p) => [...p.found].some((c) => c.valueIs(target)))
           ) {
             // there are 2 separate branches with solid cells
             return false;
@@ -207,7 +186,7 @@ export function CONTIG_CELL_ALL(
       if (
         cells.includes(nextCell) &&
         !found.has(nextCell) &&
-        nextCell.value.includes(target)
+        nextCell.valueHas(target)
       ) {
         for (const branch of paths) {
           if (branch.found.has(nextCell)) {

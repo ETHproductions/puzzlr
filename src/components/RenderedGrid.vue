@@ -21,11 +21,11 @@ export type Options = {
   hintsTop?: number[];
   hintsRight?: number[];
   hintsBottom?: number[];
-}
+};
 export type Props = {
   puzzle: Puzzle;
   options: Options;
-}
+};
 const { puzzle, options } = defineProps<Props>();
 
 let solution = ref();
@@ -46,8 +46,7 @@ let width: number,
 let groups = new Map<string, SVGGElement>();
 
 function resetPuzzle() {
-  while (svg.lastChild)
-    svg.removeChild(svg.lastChild);
+  while (svg.lastChild) svg.removeChild(svg.lastChild);
 
   ({ defaultScale: scale, funcs: renderfuncs } = puzzle.renderSettings);
   grid = puzzle.grid;
@@ -145,7 +144,7 @@ function renderPuzzle() {
   let render = (
     objects: PuzzleVariable[],
     cache: { elems: SVGElement[]; value: PuzzleVariableValues }[],
-    funcs: RenderFunc<any>[]
+    funcs: RenderFunc<any>[],
   ) => {
     for (let i in objects) {
       let obj = objects[i];
@@ -191,7 +190,7 @@ function addHint(
   x: number,
   y: number,
   color = "black",
-  size = scale / 2
+  size = scale / 2,
 ) {
   let text = createSVGElement("text", "hints", {
     fill: color,
@@ -229,9 +228,9 @@ const renderElements: {
         stroke: "black",
         "stroke-width":
           edge.isEdgeOfGrid ||
-            (edge.leftCell != null &&
-              edge.rightCell != null &&
-              edge.leftCell.area_id != edge.rightCell.area_id)
+          (edge.leftCell != null &&
+            edge.rightCell != null &&
+            edge.leftCell.area_id != edge.rightCell.area_id)
             ? 3
             : 1,
         "stroke-linecap": "square",
@@ -243,11 +242,8 @@ const renderElements: {
     },
     edgedraw: (edge) => {
       createSVGElement("line", "edges-base", {
-        stroke:
-          edge.value.length == 1 && edge.value[0] == 0
-            ? "transparent"
-            : "black",
-        "stroke-width": edge.value.length == 1 && edge.value[0] == 1 ? 3 : 1,
+        stroke: edge.valueIs(0) ? "transparent" : "black",
+        "stroke-width": edge.valueIs(1) ? 3 : 1,
         "stroke-linecap": "square",
         "stroke-dasharray": edge.value.length != 1 ? "3 4" : "",
         x1: convertX(edge.fromVert.rpos.x),
@@ -262,11 +258,7 @@ const renderElements: {
           edge.isEdgeOfGrid || edge.value.length > 1 || edge.value[0] != 1
             ? "black"
             : "transparent",
-        "stroke-width": edge.isEdgeOfGrid
-          ? 3
-          : edge.value.length == 1 && edge.value[0] == 0
-            ? 2
-            : 1,
+        "stroke-width": edge.isEdgeOfGrid ? 3 : edge.valueIs(0) ? 2 : 1,
         "stroke-linecap": "square",
         "stroke-dasharray":
           edge.isEdgeOfGrid || edge.value.length == 1 ? "" : "3 4",
@@ -278,12 +270,12 @@ const renderElements: {
     },
     edgestitch: (edge) => {
       createSVGElement("line", "edges-base", {
-        stroke: edge.value.length == 1 && edge.value[0] == 0 ? "#B00" : "black",
+        stroke: edge.valueIs(0) ? "#B00" : "black",
         "stroke-width":
           edge.isEdgeOfGrid ||
-            (edge.leftCell != null &&
-              edge.rightCell != null &&
-              edge.leftCell.area_id != edge.rightCell.area_id)
+          (edge.leftCell != null &&
+            edge.rightCell != null &&
+            edge.leftCell.area_id != edge.rightCell.area_id)
             ? 3
             : 1,
         "stroke-linecap": "square",
@@ -292,7 +284,7 @@ const renderElements: {
         x2: convertX(edge.toVert.rpos.x),
         y2: convertY(edge.toVert.rpos.y),
       });
-      if (edge.value.length == 1 && edge.value[0] == 1) {
+      if (edge.valueIs(1)) {
         let mid1 = edge.leftCell?.midpoint;
         let mid2 = edge.rightCell?.midpoint;
         if (!mid1 || !mid2) return;
@@ -306,7 +298,7 @@ const renderElements: {
           x2: convertX(mid2.x),
           y2: convertY(mid2.y),
         });
-      } else if (edge.value.length == 1 && edge.value[0] == 0) {
+      } else if (edge.valueIs(0)) {
         createSVGElement("line", "answer", {
           stroke: "#D00",
           "stroke-width": 3,
@@ -338,36 +330,32 @@ const renderElements: {
       });
     },
     binarystar: (cell) => {
-      createSVGElement(
-        "path",
-        "cells-base",
-        cell.value.length == 1 && cell.value[0] == 1
-          ? {
-            fill: "#333",
-            d:
-              [...Array(10)]
-                .map((_, i) => {
-                  let { x, y } = cell.midpoint;
-                  let angle = i * (Math.PI / 5) - Math.PI / 2;
-                  let r = [0.3, 0.15][i % 2];
-                  return (
-                    (i > 0 ? "L " : "M ") +
-                    [
-                      convertX(x + Math.cos(angle) * r),
-                      convertY(y + Math.sin(angle) * r),
-                    ]
-                  );
-                })
-                .join(" ") + " Z",
-          }
-          : {
-            fill: cell.value.length != 1 ? "#CCC" : "#FFF",
-            d: cell.verts.map((v, i) => {
+      createSVGElement("path", "cells-base", {
+        fill: cell.valueIs(1)
+          ? "#333"
+          : cell.value.length != 1
+            ? "#CCC"
+            : "#FFF",
+        d: cell.valueIs(1)
+          ? [...Array(10)]
+              .map((_, i) => {
+                let { x, y } = cell.midpoint;
+                let angle = i * (Math.PI / 5) - Math.PI / 2;
+                let r = [0.3, 0.15][i % 2];
+                return (
+                  (i > 0 ? "L " : "M ") +
+                  [
+                    convertX(x + Math.cos(angle) * r),
+                    convertY(y + Math.sin(angle) * r),
+                  ]
+                );
+              })
+              .join(" ") + " Z"
+          : cell.verts.map((v, i) => {
               let { x, y } = v.rpos;
               return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
             }),
-          }
-      );
+      });
     },
     numhint: (cell) => {
       if (cell.hint === undefined || cell.hint == -1) return;
@@ -377,7 +365,7 @@ const renderElements: {
         convertX(x),
         convertY(y),
         "#000",
-        scale / 1.5
+        scale / 1.5,
       );
     },
     sudoku: (cell) => {
@@ -389,7 +377,7 @@ const renderElements: {
           convertX(x),
           convertY(y),
           "#60B",
-          scale / 1.5
+          scale / 1.5,
         );
         return;
       }
@@ -399,13 +387,13 @@ const renderElements: {
       let fontsize = scale / numacross;
       for (let i = 0; i < maxvals; i++) {
         let val = (i + 1).toString(36).toUpperCase();
-        if (cell.value.includes(i + 1)) {
+        if (cell.valueHas(i + 1)) {
           addHint(
             val,
             convertX(x - 0.5 + ((i % numacross) + 0.5) / numacross),
             convertY(y - 0.5 + (((i / numacross) | 0) + 0.5) / numdown),
             "#60B",
-            fontsize
+            fontsize,
           );
         }
       }
@@ -448,12 +436,12 @@ const renderElements: {
       let prevCell = cell.adjacentEdge.find(
         (c) =>
           c.area_id == cell.area_id &&
-          c.thermoIndex == (cell.thermoIndex ?? 0) - 1
+          c.thermoIndex == (cell.thermoIndex ?? 0) - 1,
       );
       let nextCell = cell.adjacentEdge.find(
         (c) =>
           c.area_id == cell.area_id &&
-          c.thermoIndex == (cell.thermoIndex ?? 0) + 1
+          c.thermoIndex == (cell.thermoIndex ?? 0) + 1,
       );
       let prevDir = prevCell
         ? prevCell.vpos.x > cell.vpos.x
@@ -532,8 +520,9 @@ const renderElements: {
           fill: fill,
           stroke: stroke,
           "stroke-width": swidth,
-          d: `M ${p[0]} L ${p[1]} A ${bw * scale} ${bw * scale} 0 1 0 ${p[2]
-            } L ${p[3]}`,
+          d: `M ${p[0]} L ${p[1]} A ${bw * scale} ${bw * scale} 0 1 0 ${
+            p[2]
+          } L ${p[3]}`,
         });
         return;
       }
@@ -559,24 +548,25 @@ const renderElements: {
 
       createSVGElement("path", "answer", {
         fill: fill,
-        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${p[3]
-          } L ${p[4]} L ${p[5]} L ${p[6]}`,
+        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${
+          p[3]
+        } L ${p[4]} L ${p[5]} L ${p[6]}`,
       });
       createSVGElement("path", "answer", {
         fill: "transparent",
         stroke: stroke,
         "stroke-width": swidth,
-        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${p[3]
-          } M ${p[4]} L ${p[5]} L ${p[6]}`,
+        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${
+          p[3]
+        } M ${p[4]} L ${p[5]} L ${p[6]}`,
       });
     },
   },
 };
 
-
 defineExpose({ renderPuzzle });
 
-watch(() => puzzle, resetPuzzle)
+watch(() => puzzle, resetPuzzle);
 
 onMounted(() => {
   if (!solution.value) {

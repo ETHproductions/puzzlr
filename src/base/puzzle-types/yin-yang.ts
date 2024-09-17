@@ -42,9 +42,7 @@ export default class YinYangPuzzle extends Puzzle {
     function NOT_CHECKER_2x2(cells: PuzzleVariable[]) {
       for (let i = 0; i < cells.length; i++) {
         if (
-          cells[(i + 1) % cells.length].value.some((v) =>
-            cells[i].value.includes(v),
-          )
+          cells[(i + 1) % cells.length].value.some((v) => cells[i].valueHas(v))
         )
           return true;
       }
@@ -64,11 +62,7 @@ export default class YinYangPuzzle extends Puzzle {
       );
       for (const v of values) {
         let indices = cells.map((c) =>
-          c.value.length == 1 && c.value[0] == v
-            ? 1
-            : c.value.includes(v)
-              ? 0
-              : -1,
+          c.valueIs(v) ? 1 : c.valueHas(v) ? 0 : -1,
         );
         const index = indices.indexOf(1);
         if (index == -1) continue;

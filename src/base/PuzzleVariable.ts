@@ -13,6 +13,12 @@ export class PuzzleVariable {
   toString() {
     return `V${this.var_id}`;
   }
+  valueIs(value: PuzzleVariableValue) {
+    return this.value.length == 1 && this.value[0] == value;
+  }
+  valueHas(value: PuzzleVariableValue) {
+    return this.value.includes(value);
+  }
 }
 export type PuzzleVariableValue = string | number;
 export type PuzzleVariableValues = PuzzleVariableValue[];
