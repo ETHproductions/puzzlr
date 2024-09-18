@@ -22,11 +22,8 @@ export type Options = {
   hintsRight?: number[];
   hintsBottom?: number[];
 };
-export type Props = {
-  puzzle: Puzzle;
-  options: Options;
-};
-const { puzzle, options } = defineProps<Props>();
+
+let puzzle: Puzzle | null;
 
 let solution = ref();
 let svg: SVGSVGElement;
@@ -45,8 +42,11 @@ let width: number,
   maxY: number;
 let groups = new Map<string, SVGGElement>();
 
-function resetPuzzle() {
+function resetPuzzle(newPuzzle: Puzzle, options: Options) {
   while (svg.lastChild) svg.removeChild(svg.lastChild);
+
+  if (!newPuzzle) return;
+  puzzle = newPuzzle;
 
   ({ defaultScale: scale, funcs: renderfuncs } = puzzle.renderSettings);
   grid = puzzle.grid;
@@ -564,7 +564,7 @@ const renderElements: {
   },
 };
 
-defineExpose({ renderPuzzle });
+defineExpose({ renderPuzzle, resetPuzzle });
 
 watch(() => puzzle, resetPuzzle);
 

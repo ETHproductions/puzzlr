@@ -1,32 +1,51 @@
 <template>
-  Download examples from
-  <a target="_blank" href="https://github.com/ETHproductions/puzzlr/tree/main/src/test">
-    GitHub
-  </a>
-  <br />
-  <label for="puzzfile">Load puzzle:</label>
-  <input type="file" name="puzzfile" @change="changeFile" />
-  <br />
-  <label for="solvemode">Solve mode:</label>
-  <select name="solvemode" @change="changeSolveMode">
-    <option value="fast" default>fast (deductions before checks)</option>
-    <option value="thorough">thorough (checks before deductions)</option>
-  </select>
-  <br />
-  <button type="button" :disabled="!puzzleReady" @click="startSolve">
-    Solve
-  </button>
-  <br />
-  <span>{{ statusText }}</span>
-  <br />
-  <RenderedGrid ref="renderedGrid" v-if="livePuzzle" :puzzle="livePuzzle" :options="puzzleOptions" />
+  <v-container class="d-flex flex-column align-center">
+    <v-sheet elevation="2" class="v-col-6 mb-4">
+      <v-row>
+        <v-col cols="6">
+          <v-file-input
+            label="Puzzle input"
+            accept=".json"
+            v-model="puzzleFile"
+          />
+        </v-col>
+        <v-col cols="6">
+          <v-select
+            label="Solve mode"
+            :items="['fast', 'thorough']"
+            v-model="solveMode"
+          />
+        </v-col>
+      </v-row>
+      <div class="d-flex justify-space-between align-center">
+        <v-btn :disabled="!puzzleReady" @click="startSolve"> Solve </v-btn>
+        <div>
+          Need puzzles? Download examples from
+          <a
+            target="_blank"
+            href="https://github.com/ETHproductions/puzzlr/tree/main/src/test"
+          >
+            GitHub
+          </a>
+        </div>
+      </div>
+    </v-sheet>
+    <div class="d-flex justify-center ga-4">
+      <v-sheet elevation="2">
+        <RenderedGrid ref="renderedGrid" />
+      </v-sheet>
+      <v-sheet elevation="2" class="pa-4" style="width: 480px">
+        <p>{{ statusText }}</p>
+      </v-sheet>
+    </div>
+  </v-container>
 </template>
 
 <script lang="ts" setup>
 import Puzzle from "@/base/Puzzle";
 import { PuzzleVariableValues } from "@/base/PuzzleVariable";
 import puzzleTypes from "@/base/puzzle-types";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 let puzzleData: any = null;
 let puzzleType: any = null;
@@ -35,11 +54,13 @@ let puzzleOptions: object = {};
 let renderMessage: any = null;
 let puzzleReady = ref<boolean>(false);
 let renderedGrid = ref();
+const solveMode = ref("fast");
+const puzzleFile = ref<File | null>(null);
 
 const statusText = ref<string>("");
 
-const changeFile = (e: any) => {
-  let file: File = e.target.files[0];
+watch(puzzleFile, () => {
+  let file: File = puzzleFile.value;
   if (!file) return;
   puzzleReady.value = false;
   console.log("Reading data from", file.name);
@@ -80,6 +101,7 @@ const changeFile = (e: any) => {
 
     try {
       livePuzzle = new puzzleType(puzzleData);
+      console.log("RenderedGrid should have reset by now");
       puzzleWorker.postMessage({ command: "load", data: puzzleData });
       console.log("Data loaded.");
     } catch (e) {
@@ -97,11 +119,12 @@ const changeFile = (e: any) => {
         ? puzzleData.sums.slice(puzzleData.grid.width)
         : null,
     };
+    renderedGrid.value?.resetPuzzle(livePuzzle, puzzleOptions);
   };
-};
-const changeSolveMode = (e: any) => {
-  puzzleWorker.postMessage({ command: "changemode", data: e.target.value });
-};
+});
+watch(solveMode, () => {
+  puzzleWorker.postMessage({ command: "changemode", data: solveMode.value });
+});
 const startSolve = () => {
   statusText.value = "Running...";
   puzzleWorker.postMessage({ command: "solve" });
