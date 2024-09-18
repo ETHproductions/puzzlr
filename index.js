@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import { formatFull, formatSimple } from "./lib/base/basic-format.js";
+import { formatFull, formatSimple } from "./basic-format.js";
 let formatPuzzle = formatSimple;
 
 import puzzleMap from './lib/base/puzzle-types/index.js';
