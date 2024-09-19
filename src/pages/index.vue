@@ -3,28 +3,17 @@
     <v-sheet elevation="2" class="v-col-6 mb-4">
       <v-row>
         <v-col cols="6">
-          <v-file-input
-            label="Puzzle input"
-            accept=".json"
-            v-model="puzzleFile"
-          />
+          <v-file-input label="Puzzle input" accept=".json" v-model="puzzleFile" />
         </v-col>
         <v-col cols="6">
-          <v-select
-            label="Solve mode"
-            :items="['fast', 'thorough']"
-            v-model="solveMode"
-          />
+          <v-select label="Solve mode" :items="['fast', 'thorough']" v-model="solveMode" />
         </v-col>
       </v-row>
       <div class="d-flex justify-space-between align-center">
         <v-btn :disabled="!puzzleReady" @click="startSolve"> Solve </v-btn>
         <div>
           Need puzzles? Download examples from
-          <a
-            target="_blank"
-            href="https://github.com/ETHproductions/puzzlr/tree/main/src/test"
-          >
+          <a target="_blank" href="https://github.com/ETHproductions/puzzlr/tree/main/src/test">
             GitHub
           </a>
         </div>
@@ -59,9 +48,9 @@ const puzzleFile = ref<File | null>(null);
 
 const statusText = ref<string>("");
 
-watch(puzzleFile, () => {
-  let file: File = puzzleFile.value;
+watch(puzzleFile, (file) => {
   if (!file) return;
+
   puzzleReady.value = false;
   console.log("Reading data from", file.name);
 

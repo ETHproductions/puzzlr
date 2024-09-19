@@ -12,7 +12,7 @@ svg {
 import { GridCell, GridEdge, PuzzleGrid } from "@/base";
 import Puzzle from "@/base/Puzzle";
 import { PuzzleVariable, PuzzleVariableValues } from "@/base/PuzzleVariable";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 
 const ns = "http://www.w3.org/2000/svg";
 
@@ -228,9 +228,9 @@ const renderElements: {
         stroke: "black",
         "stroke-width":
           edge.isEdgeOfGrid ||
-          (edge.leftCell != null &&
-            edge.rightCell != null &&
-            edge.leftCell.area_id != edge.rightCell.area_id)
+            (edge.leftCell != null &&
+              edge.rightCell != null &&
+              edge.leftCell.area_id != edge.rightCell.area_id)
             ? 3
             : 1,
         "stroke-linecap": "square",
@@ -273,9 +273,9 @@ const renderElements: {
         stroke: edge.valueIs(0) ? "#B00" : "black",
         "stroke-width":
           edge.isEdgeOfGrid ||
-          (edge.leftCell != null &&
-            edge.rightCell != null &&
-            edge.leftCell.area_id != edge.rightCell.area_id)
+            (edge.leftCell != null &&
+              edge.rightCell != null &&
+              edge.leftCell.area_id != edge.rightCell.area_id)
             ? 3
             : 1,
         "stroke-linecap": "square",
@@ -338,23 +338,23 @@ const renderElements: {
             : "#FFF",
         d: cell.valueIs(1)
           ? [...Array(10)]
-              .map((_, i) => {
-                let { x, y } = cell.midpoint;
-                let angle = i * (Math.PI / 5) - Math.PI / 2;
-                let r = [0.3, 0.15][i % 2];
-                return (
-                  (i > 0 ? "L " : "M ") +
-                  [
-                    convertX(x + Math.cos(angle) * r),
-                    convertY(y + Math.sin(angle) * r),
-                  ]
-                );
-              })
-              .join(" ") + " Z"
+            .map((_, i) => {
+              let { x, y } = cell.midpoint;
+              let angle = i * (Math.PI / 5) - Math.PI / 2;
+              let r = [0.3, 0.15][i % 2];
+              return (
+                (i > 0 ? "L " : "M ") +
+                [
+                  convertX(x + Math.cos(angle) * r),
+                  convertY(y + Math.sin(angle) * r),
+                ]
+              );
+            })
+            .join(" ") + " Z"
           : cell.verts.map((v, i) => {
-              let { x, y } = v.rpos;
-              return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
-            }),
+            let { x, y } = v.rpos;
+            return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
+          }),
       });
     },
     numhint: (cell) => {
@@ -520,9 +520,8 @@ const renderElements: {
           fill: fill,
           stroke: stroke,
           "stroke-width": swidth,
-          d: `M ${p[0]} L ${p[1]} A ${bw * scale} ${bw * scale} 0 1 0 ${
-            p[2]
-          } L ${p[3]}`,
+          d: `M ${p[0]} L ${p[1]} A ${bw * scale} ${bw * scale} 0 1 0 ${p[2]
+            } L ${p[3]}`,
         });
         return;
       }
@@ -548,17 +547,15 @@ const renderElements: {
 
       createSVGElement("path", "answer", {
         fill: fill,
-        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${
-          p[3]
-        } L ${p[4]} L ${p[5]} L ${p[6]}`,
+        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${p[3]
+          } L ${p[4]} L ${p[5]} L ${p[6]}`,
       });
       createSVGElement("path", "answer", {
         fill: "transparent",
         stroke: stroke,
         "stroke-width": swidth,
-        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${
-          p[3]
-        } M ${p[4]} L ${p[5]} L ${p[6]}`,
+        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${p[3]
+          } M ${p[4]} L ${p[5]} L ${p[6]}`,
       });
     },
   },
@@ -566,14 +563,11 @@ const renderElements: {
 
 defineExpose({ renderPuzzle, resetPuzzle });
 
-watch(() => puzzle, resetPuzzle);
-
 onMounted(() => {
   if (!solution.value) {
     console.log("No SVG found!");
     return;
   }
   svg = solution.value;
-  resetPuzzle();
 });
 </script>
