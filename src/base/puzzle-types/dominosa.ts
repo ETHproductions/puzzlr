@@ -18,7 +18,7 @@ export default class DominosaPuzzle extends Puzzle {
     grid: { width: number; height: number };
     task: number[][];
   }) {
-    let _grid = SquareGrid.fromSize(grid.width, grid.height);
+    const _grid = SquareGrid.fromSize(grid.width, grid.height);
     super(_grid);
 
     let maxNum = 0;
@@ -32,20 +32,20 @@ export default class DominosaPuzzle extends Puzzle {
         this.uniqueDominoes[i + "," + j] = [];
       }
     }
-    for (let edge of this.grid.edges) {
+    for (const edge of this.grid.edges) {
       if (!edge.leftCell || !edge.rightCell) continue;
       this.addVariable(edge, [0, 1]);
 
-      let id = [edge.leftCell.hint!, edge.rightCell.hint!];
+      const id = [edge.leftCell.hint!, edge.rightCell.hint!];
       if (id[0] > id[1]) id.reverse();
       this.uniqueDominoes[id + ""].push(edge);
     }
-    for (let id of Object.keys(this.uniqueDominoes))
+    for (const id of Object.keys(this.uniqueDominoes))
       this.addConstraint(SUM_EQUALS, this.uniqueDominoes[id], 1);
 
-    for (let cell of this.grid.cells) {
-      let edges = [];
-      for (let edge of cell.edges) if (!edge.isEdgeOfGrid) edges.push(edge);
+    for (const cell of this.grid.cells) {
+      const edges = [];
+      for (const edge of cell.edges) if (!edge.isEdgeOfGrid) edges.push(edge);
       this.addConstraint(SUM_EQUALS, edges, 1);
     }
   }
