@@ -204,6 +204,22 @@ function addHint(
   return text;
 }
 
+const regionColors = [
+  "#FFFF99", // yellow (60)
+  "#99FF99", // green (120)
+  "#99CCFF", // blue (210)
+  "#FF9999", // red (0)
+  "#CC99FF", // purple (270)
+  "#FFCC99", // orange (30)
+
+  "#99FFFF", // cyan (180)
+  "#FF99CC", // pink (330)
+  "#CCFF99", // yellow-green (90)
+  "#9999FF", // deep blue (240)
+  "#FF99FF", // magenta (300)
+  "#99FFCC", // teal (150)
+];
+
 type RenderFunc<T> = (a: T) => void;
 type RenderFuncCollection<T> = { [k: string]: RenderFunc<T> };
 
@@ -228,9 +244,9 @@ const renderElements: {
         stroke: "black",
         "stroke-width":
           edge.isEdgeOfGrid ||
-            (edge.leftCell != null &&
-              edge.rightCell != null &&
-              edge.leftCell.area_id != edge.rightCell.area_id)
+          (edge.leftCell != null &&
+            edge.rightCell != null &&
+            edge.leftCell.area_id != edge.rightCell.area_id)
             ? 3
             : 1,
         "stroke-linecap": "square",
@@ -273,9 +289,9 @@ const renderElements: {
         stroke: edge.valueIs(0) ? "#B00" : "black",
         "stroke-width":
           edge.isEdgeOfGrid ||
-            (edge.leftCell != null &&
-              edge.rightCell != null &&
-              edge.leftCell.area_id != edge.rightCell.area_id)
+          (edge.leftCell != null &&
+            edge.rightCell != null &&
+            edge.leftCell.area_id != edge.rightCell.area_id)
             ? 3
             : 1,
         "stroke-linecap": "square",
@@ -338,23 +354,23 @@ const renderElements: {
             : "#FFF",
         d: cell.valueIs(1)
           ? [...Array(10)]
-            .map((_, i) => {
-              let { x, y } = cell.midpoint;
-              let angle = i * (Math.PI / 5) - Math.PI / 2;
-              let r = [0.3, 0.15][i % 2];
-              return (
-                (i > 0 ? "L " : "M ") +
-                [
-                  convertX(x + Math.cos(angle) * r),
-                  convertY(y + Math.sin(angle) * r),
-                ]
-              );
-            })
-            .join(" ") + " Z"
+              .map((_, i) => {
+                let { x, y } = cell.midpoint;
+                let angle = i * (Math.PI / 5) - Math.PI / 2;
+                let r = [0.3, 0.15][i % 2];
+                return (
+                  (i > 0 ? "L " : "M ") +
+                  [
+                    convertX(x + Math.cos(angle) * r),
+                    convertY(y + Math.sin(angle) * r),
+                  ]
+                );
+              })
+              .join(" ") + " Z"
           : cell.verts.map((v, i) => {
-            let { x, y } = v.rpos;
-            return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
-          }),
+              let { x, y } = v.rpos;
+              return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
+            }),
       });
     },
     numhint: (cell) => {
@@ -520,8 +536,9 @@ const renderElements: {
           fill: fill,
           stroke: stroke,
           "stroke-width": swidth,
-          d: `M ${p[0]} L ${p[1]} A ${bw * scale} ${bw * scale} 0 1 0 ${p[2]
-            } L ${p[3]}`,
+          d: `M ${p[0]} L ${p[1]} A ${bw * scale} ${bw * scale} 0 1 0 ${
+            p[2]
+          } L ${p[3]}`,
         });
         return;
       }
@@ -547,15 +564,17 @@ const renderElements: {
 
       createSVGElement("path", "answer", {
         fill: fill,
-        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${p[3]
-          } L ${p[4]} L ${p[5]} L ${p[6]}`,
+        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${
+          p[3]
+        } L ${p[4]} L ${p[5]} L ${p[6]}`,
       });
       createSVGElement("path", "answer", {
         fill: "transparent",
         stroke: stroke,
         "stroke-width": swidth,
-        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${p[3]
-          } M ${p[4]} L ${p[5]} L ${p[6]}`,
+        d: `M ${p[0]} L ${p[1]} A ${tw * scale} ${tw * scale} 0 0 0 ${p[2]} L ${
+          p[3]
+        } M ${p[4]} L ${p[5]} L ${p[6]}`,
       });
     },
   },
