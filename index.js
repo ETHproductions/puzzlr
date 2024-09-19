@@ -6,8 +6,10 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import { formatFull, formatSimple } from "./src/base/basic-format.js";
+import { formatFull, formatSimple } from "./basic-format.js";
 let formatPuzzle = formatSimple;
+
+import puzzleMap from './lib/base/puzzle-types/index.js';
 
 let type, filename, mode = 'thorough', max_depth = 1, debug = 0;
 
@@ -54,10 +56,7 @@ let PuzzleType, puzzleData;
 if (type === undefined) {
     console.log(`puzzlr <type> <file> <options>\n`);
 
-    let puzzletypes = [];
-    readdirSync(__dirname + `\\src\\puzzles`).forEach(file => {
-        if (/\.js$/i.test(file)) puzzletypes.push(file.slice(0, -3));
-    });
+    let puzzletypes = puzzleMap.keys();
     let output = ['Types supported: '];
     for (let ptype of puzzletypes) {
         if (output[output.length - 1].length + ptype.length + 1 > 80)
@@ -77,9 +76,9 @@ Options:
     process.exit(0);
 }
 
-try {
-    PuzzleType = (await import('file:\\\\' + __dirname + `\\src\\puzzles\\${type}.js`)).default;
-} catch(e) {
+if (puzzleMap.has(type)) {
+    PuzzleType = puzzleMap.get(type);
+} else {
     console.error('Error: Invalid puzzle type:', type);
     process.exit(1);
 }
