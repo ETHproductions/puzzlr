@@ -1,6 +1,6 @@
 <template>
   <v-container class="d-flex flex-column align-center">
-    <v-sheet elevation="2" class="v-col-6 mb-4">
+    <v-sheet elevation="2" class="v-col-12 mb-4" style="max-width: 720px;">
       <v-row>
         <v-col cols="6">
           <v-file-input label="Puzzle input" accept=".json" v-model="puzzleFile" />
@@ -10,7 +10,10 @@
         </v-col>
       </v-row>
       <div class="d-flex justify-space-between align-center">
-        <v-btn :disabled="!puzzleReady" @click="startSolve"> Solve </v-btn>
+        <div class="d-flex ga-2">
+          <v-btn :disabled="!puzzleReady" @click="startSolve"> Solve </v-btn>
+          <v-btn :disabled="!puzzleReady" @click="analyzePuzzle"> Analyze </v-btn>
+        </div>
         <div>
           Need puzzles? Download examples from
           <a target="_blank" href="https://github.com/ETHproductions/puzzlr/tree/main/src/test">
@@ -25,6 +28,11 @@
       </v-sheet>
       <v-sheet elevation="2" class="pa-4" style="width: 480px">
         <p>{{ statusText }}</p>
+        <v-list density="compact">
+          <v-list-item v-for="deduction in deductions" :key="deduction.index"
+            :title="livePuzzle?.variables[deduction.variable] + ' =/> ' + deduction.value"
+            @click="applyDeduction(deduction.index)" />
+        </v-list>
       </v-sheet>
     </div>
   </v-container>
@@ -32,7 +40,7 @@
 
 <script lang="ts" setup>
 import Puzzle from "@/base/Puzzle";
-import { PuzzleVariableValues } from "@/base/PuzzleVariable";
+import { PuzzleVariableValue, PuzzleVariableValues } from "@/base/PuzzleVariable";
 import puzzleTypes from "@/base/puzzle-types";
 import { ref, watch } from "vue";
 
@@ -45,7 +53,7 @@ let puzzleReady = ref<boolean>(false);
 let renderedGrid = ref();
 const solveMode = ref("fast");
 const puzzleFile = ref<File | null>(null);
-
+const deductions = ref<{ variable: number, value: PuzzleVariableValue, index: number }[]>([]);
 const statusText = ref<string>("");
 
 watch(puzzleFile, (file) => {
@@ -118,20 +126,36 @@ const startSolve = () => {
   statusText.value = "Running...";
   puzzleWorker.postMessage({ command: "solve" });
 };
+const analyzePuzzle = () => {
+  statusText.value = "Analyzing...";
+  puzzleWorker.postMessage({ command: "analyze" });
+}
+const applyDeduction = (deduct_id: number) => {
+  if (!livePuzzle) return;
+
+  const [deduction] = deductions.value.splice(deduct_id, 1);
+  deductions.value = deductions.value.map((d, i) => ({ ...d, index: i }));
+
+  const variable = livePuzzle.variables[deduction.variable];
+  variable.value.splice(variable.value.indexOf(deduction.value), 1);
+  renderedGrid.value.renderPuzzle();
+
+  puzzleWorker.postMessage({ command: "applydeduction", deduct_id });
+}
 
 const puzzleWorker = new Worker(new URL("../web-solver.ts", import.meta.url), {
   type: "module",
 });
 const renderPuzzle = () => {
   if (!renderMessage) return;
-  let e = renderMessage;
+  let data = renderMessage;
   renderMessage = null;
-  let answer: PuzzleVariableValues[] = e.data.answer;
+  let answer: PuzzleVariableValues[] = data.answer;
   answer.forEach((v, i) => {
     livePuzzle!.variables[i].value = v;
   });
   renderedGrid.value.renderPuzzle();
-  statusText.value = e.data.output;
+  statusText.value = data.output;
 };
 puzzleWorker.onmessage = (e) => {
   // console.log("Message received from child:", e.data);
@@ -141,11 +165,15 @@ puzzleWorker.onmessage = (e) => {
       break;
     case "update":
     case "done":
-      renderMessage = e;
+      renderMessage = e.data;
       setTimeout(renderPuzzle, 1);
       break;
     case "invalid":
       statusText.value = "Error processing puzzle";
+      break;
+    case "analysis":
+      statusText.value = "Found " + e.data.deductions.length + " deductions";
+      deductions.value = e.data.deductions;
       break;
   }
 };

@@ -158,7 +158,7 @@ function renderPuzzle() {
       }
       cached.elems = elemBuffer;
       elemBuffer = [];
-      cached.value = obj.value;
+      cached.value = obj.value.slice();
     }
   };
 
