@@ -73,10 +73,9 @@ function resetPuzzle(newPuzzle: Puzzle, options: Options) {
     "edges-base",
     "hints",
     "answer",
-    /*
-    "cells-hitbox",
-    "edges-hitbox",
-    */
+    "highlight",
+    //"cells-hitbox",
+    //"edges-hitbox",
   ]) {
     let group = document.createElementNS(ns, "g");
     groups.set(groupName, group);
@@ -164,6 +163,36 @@ function renderPuzzle() {
 
   render(grid.edges, edgecache, edgefuncs);
   render(grid.cells, cellcache, cellfuncs);
+}
+
+function changeHighlight(var_id: number | null) {
+  let group = groups.get("highlight");
+  if (group) while (group.lastChild) group.removeChild(group.lastChild);
+  if (var_id === null || !puzzle) return;
+
+  const variable = puzzle.variables[var_id];
+  if (variable instanceof GridCell) {
+    createSVGElement("path", "highlight", {
+      fill: "#00FFFFAA",
+      d:
+        variable.verts
+          .map((v, i) => {
+            let { x, y } = v.rpos;
+            return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
+          })
+          .join(" ") + " Z",
+    });
+  } else if (variable instanceof GridEdge) {
+    createSVGElement("line", "highlight", {
+      stroke: "#00FFFFAA",
+      "stroke-width": 5,
+      "stroke-linecap": "square",
+      x1: convertX(variable.fromVert.rpos.x),
+      y1: convertY(variable.fromVert.rpos.y),
+      x2: convertX(variable.toVert.rpos.x),
+      y2: convertY(variable.toVert.rpos.y),
+    });
+  }
 }
 
 function convertX(x: number) {
@@ -580,7 +609,7 @@ const renderElements: {
   },
 };
 
-defineExpose({ renderPuzzle, resetPuzzle });
+defineExpose({ renderPuzzle, resetPuzzle, changeHighlight });
 
 onMounted(() => {
   if (!solution.value) {

@@ -39,14 +39,14 @@
       </v-sheet>
       <v-sheet elevation="2" class="pa-4" style="width: 480px">
         <div class="d-flex ga-2 mb-4">
-          <v-btn :disabled="!readyToAnalyze" @click="analyzePuzzle"
-            >Analyze</v-btn
-          >
+          <v-btn :disabled="!readyToAnalyze" @click="analyzePuzzle">
+            Analyze
+          </v-btn>
           <v-btn :disabled="deductions.length == 0" @click="applyAllDeductions">
             Apply All
           </v-btn>
         </div>
-        <p>{{ statusText }} {{ hoveredDeduction }}</p>
+        <p>{{ statusText }}</p>
         <v-list density="compact" style="max-height: 65vh; overflow-y: auto">
           <v-list-item
             v-for="deduction in deductions"
@@ -205,6 +205,9 @@ const applyAllDeductions = () => {
   readyToAnalyze = false;
   puzzleWorker.postMessage({ command: "applyall" });
 };
+watch(hoveredDeduction, () => {
+  renderedGrid.value.changeHighlight(hoveredDeduction.value?.variable ?? null);
+});
 
 const puzzleWorker = new Worker(new URL("../web-solver.ts", import.meta.url), {
   type: "module",
