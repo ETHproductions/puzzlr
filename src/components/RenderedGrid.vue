@@ -9,7 +9,7 @@ svg {
 </style>
 
 <script setup lang="ts">
-import { GridCell, GridEdge, GridVertex, PuzzleGrid } from "@/base";
+import { GridCell, GridEdge, PuzzleGrid } from "@/base";
 import Puzzle from "@/base/Puzzle";
 import { PuzzleVariable, PuzzleVariableValues } from "@/base/PuzzleVariable";
 import { onMounted, ref } from "vue";
@@ -174,24 +174,10 @@ function changeHighlight(var_id: number | null) {
   if (variable instanceof GridCell) {
     createSVGElement("path", "highlight", {
       fill: "#00FFFFAA",
-      d:
-        variable.verts
-          .map((v, i) => {
-            let { x, y } = v.rpos;
-            return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
-          })
-          .join(" ") + " Z",
+      d: getCellPath(variable),
     });
   } else if (variable instanceof GridEdge) {
-    createSVGElement("line", "highlight", {
-      stroke: "#00FFFFAA",
-      "stroke-width": 5,
-      "stroke-linecap": "square",
-      x1: convertX(variable.fromVert.rpos.x),
-      y1: convertY(variable.fromVert.rpos.y),
-      x2: convertX(variable.toVert.rpos.x),
-      y2: convertY(variable.toVert.rpos.y),
-    });
+    addLine("highlight", variable, "#00FFFFAA", 5, "square");
   }
 }
 
@@ -257,6 +243,16 @@ function addLine(
     x2: convertX(toVert.x),
     y2: convertY(toVert.y),
   });
+}
+function getCellPath(cell: GridCell) {
+  return (
+    cell.verts
+      .map(
+        (v, i) =>
+          (i > 0 ? "L " : "M ") + [convertX(v.rpos.x), convertY(v.rpos.y)],
+      )
+      .join(" ") + " Z"
+  );
 }
 
 /*const regionColors = [
@@ -324,24 +320,15 @@ const renderElements: {
             : cell.value[0] == 1
               ? "#555"
               : "#FFF",
-        d:
-          cell.verts
-            .map((v, i) => {
-              let { x, y } = v.rpos;
-              return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
-            })
-            .join(" ") + " Z",
+        d: getCellPath(cell),
       });
     },
     binarystar: (cell) => {
-      createSVGElement("path", "cells-base", {
-        fill: cell.valueIs(1)
-          ? "#333"
-          : cell.value.length != 1
-            ? "#CCC"
-            : "#FFF",
-        d: cell.valueIs(1)
-          ? [...Array(10)]
+      if (cell.valueIs(1))
+        createSVGElement("path", "cells-base", {
+          fill: "#333",
+          d:
+            [...Array(10)]
               .map((_, i) => {
                 let { x, y } = cell.midpoint;
                 let angle = i * (Math.PI / 5) - Math.PI / 2;
@@ -354,12 +341,13 @@ const renderElements: {
                   ]
                 );
               })
-              .join(" ") + " Z"
-          : cell.verts.map((v, i) => {
-              let { x, y } = v.rpos;
-              return (i > 0 ? "L " : "M ") + [convertX(x), convertY(y)];
-            }),
-      });
+              .join(" ") + " Z",
+        });
+      else
+        createSVGElement("path", "cells-base", {
+          fill: cell.value.length != 1 ? "#CCC" : "#FFF",
+          d: getCellPath(cell),
+        });
     },
     numhint: (cell) => {
       if (cell.hint === undefined || cell.hint == -1) return;
