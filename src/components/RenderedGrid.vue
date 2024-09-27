@@ -9,7 +9,7 @@ svg {
 </style>
 
 <script setup lang="ts">
-import { GridCell, GridEdge, PuzzleGrid } from "@/base";
+import { GridCell, GridEdge, GridVertex, PuzzleGrid } from "@/base";
 import Puzzle from "@/base/Puzzle";
 import { PuzzleVariable, PuzzleVariableValues } from "@/base/PuzzleVariable";
 import { onMounted, ref } from "vue";
@@ -232,8 +232,34 @@ function addHint(
   text.textContent = hint;
   return text;
 }
+function addLine(
+  groupName: string,
+  {
+    fromVert,
+    toVert,
+  }:
+    | GridEdge
+    | { fromVert: { x: number; y: number }; toVert: { x: number; y: number } },
+  stroke: string,
+  strokeWidth: number,
+  strokeLinecap: string = "",
+  strokeDasharray: string = "",
+) {
+  if ("rpos" in fromVert) fromVert = fromVert.rpos;
+  if ("rpos" in toVert) toVert = toVert.rpos;
+  createSVGElement("line", groupName, {
+    stroke,
+    "stroke-width": strokeWidth,
+    "stroke-linecap": strokeLinecap,
+    "stroke-dasharray": strokeDasharray,
+    x1: convertX(fromVert.x),
+    y1: convertY(fromVert.y),
+    x2: convertX(toVert.x),
+    y2: convertY(toVert.y),
+  });
+}
 
-const regionColors = [
+/*const regionColors = [
   "#FFFF99", // yellow (60)
   "#99FF99", // green (120)
   "#99CCFF", // blue (210)
@@ -247,7 +273,7 @@ const regionColors = [
   "#9999FF", // deep blue (240)
   "#FF99FF", // magenta (300)
   "#99FFCC", // teal (150)
-];
+];*/
 
 type RenderFunc<T> = (a: T) => void;
 type RenderFuncCollection<T> = { [k: string]: RenderFunc<T> };
@@ -258,101 +284,34 @@ const renderElements: {
 } = {
   edge: {
     edgeplain: (edge) => {
-      createSVGElement("line", "edges-base", {
-        stroke: "black",
-        "stroke-width": edge.isEdgeOfGrid ? 3 : 1,
-        "stroke-linecap": "square",
-        x1: convertX(edge.fromVert.rpos.x),
-        y1: convertY(edge.fromVert.rpos.y),
-        x2: convertX(edge.toVert.rpos.x),
-        y2: convertY(edge.toVert.rpos.y),
-      });
+      addLine("edges-base", edge, "black", edge.isEdgeOfGrid ? 3 : 1, "square");
     },
     edgearea: (edge) => {
-      createSVGElement("line", "edges-base", {
-        stroke: "black",
-        "stroke-width":
-          edge.isEdgeOfGrid ||
-          (edge.leftCell != null &&
-            edge.rightCell != null &&
-            edge.leftCell.area_id != edge.rightCell.area_id)
-            ? 3
-            : 1,
-        "stroke-linecap": "square",
-        x1: convertX(edge.fromVert.rpos.x),
-        y1: convertY(edge.fromVert.rpos.y),
-        x2: convertX(edge.toVert.rpos.x),
-        y2: convertY(edge.toVert.rpos.y),
-      });
+      const sWidth = edge.leftCell?.area_id != edge.rightCell?.area_id ? 3 : 1;
+      addLine("edges-base", edge, "black", sWidth, "square");
     },
     edgedraw: (edge) => {
-      createSVGElement("line", "edges-base", {
-        stroke: edge.valueIs(0) ? "transparent" : "black",
-        "stroke-width": edge.valueIs(1) ? 3 : 1,
-        "stroke-linecap": "square",
-        "stroke-dasharray": edge.value.length != 1 ? "3 4" : "",
-        x1: convertX(edge.fromVert.rpos.x),
-        y1: convertY(edge.fromVert.rpos.y),
-        x2: convertX(edge.toVert.rpos.x),
-        y2: convertY(edge.toVert.rpos.y),
-      });
+      if (edge.valueIs(0)) return;
+      const sWidth = edge.valueIs(1) ? 3 : 1;
+      const sDasharray = edge.value.length > 1 ? "3 4" : "";
+      addLine("edges-base", edge, "black", sWidth, "square", sDasharray);
     },
     edgedomino: (edge) => {
-      createSVGElement("line", "edges-base", {
-        stroke:
-          edge.isEdgeOfGrid || edge.value.length > 1 || edge.value[0] != 1
-            ? "black"
-            : "transparent",
-        "stroke-width": edge.isEdgeOfGrid ? 3 : edge.valueIs(0) ? 2 : 1,
-        "stroke-linecap": "square",
-        "stroke-dasharray":
-          edge.isEdgeOfGrid || edge.value.length == 1 ? "" : "3 4",
-        x1: convertX(edge.fromVert.rpos.x),
-        y1: convertY(edge.fromVert.rpos.y),
-        x2: convertX(edge.toVert.rpos.x),
-        y2: convertY(edge.toVert.rpos.y),
-      });
+      if (edge.valueIs(1)) return;
+      const sWidth = edge.isEdgeOfGrid ? 3 : edge.valueIs(0) ? 2 : 1;
+      const sDasharray = edge.value.length > 1 ? "3 4" : "";
+      addLine("edges-base", edge, "black", sWidth, "square", sDasharray);
     },
     edgestitch: (edge) => {
-      createSVGElement("line", "edges-base", {
-        stroke: edge.valueIs(0) ? "#B00" : "black",
-        "stroke-width":
-          edge.isEdgeOfGrid ||
-          (edge.leftCell != null &&
-            edge.rightCell != null &&
-            edge.leftCell.area_id != edge.rightCell.area_id)
-            ? 3
-            : 1,
-        "stroke-linecap": "square",
-        x1: convertX(edge.fromVert.rpos.x),
-        y1: convertY(edge.fromVert.rpos.y),
-        x2: convertX(edge.toVert.rpos.x),
-        y2: convertY(edge.toVert.rpos.y),
-      });
+      const sWidth = edge.leftCell?.area_id != edge.rightCell?.area_id ? 3 : 1;
+      if (edge.valueIs(0)) addLine("answer", edge, "#D00", 3, "square");
+      else addLine("edges-base", edge, "black", sWidth, "square");
       if (edge.valueIs(1)) {
-        let mid1 = edge.leftCell?.midpoint;
-        let mid2 = edge.rightCell?.midpoint;
+        const mid1 = edge.leftCell?.midpoint;
+        const mid2 = edge.rightCell?.midpoint;
         if (!mid1 || !mid2) return;
-
-        createSVGElement("line", "answer", {
-          stroke: "black",
-          "stroke-width": scale / 6,
-          "stroke-linecap": "round",
-          x1: convertX(mid1.x),
-          y1: convertY(mid1.y),
-          x2: convertX(mid2.x),
-          y2: convertY(mid2.y),
-        });
-      } else if (edge.valueIs(0)) {
-        createSVGElement("line", "answer", {
-          stroke: "#D00",
-          "stroke-width": 3,
-          "stroke-linecap": "square",
-          x1: convertX(edge.fromVert.rpos.x),
-          y1: convertY(edge.fromVert.rpos.y),
-          x2: convertX(edge.toVert.rpos.x),
-          y2: convertY(edge.toVert.rpos.y),
-        });
+        const line = { fromVert: mid1, toVert: mid2 };
+        addLine("answer", line, "black", scale / 6, "round");
       }
     },
   },
