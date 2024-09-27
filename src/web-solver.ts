@@ -28,6 +28,9 @@ onmessage = (e) => {
     case "applydeduction":
       applyDeduction(message.deduct_id);
       break;
+    case "applyall":
+      applyAllDeductions();
+      break;
   }
 };
 
@@ -104,4 +107,9 @@ function applyDeduction(deduct_id: number) {
     ...livePuzzle.ps.deduct_queue.splice(deduct_id, 1),
   );
   livePuzzle.next_deduct();
+}
+function applyAllDeductions() {
+  if (livePuzzle == null) return;
+  while (livePuzzle.ps.deduct_queue.length > 0) livePuzzle.next_deduct();
+  analyzePuzzle();
 }

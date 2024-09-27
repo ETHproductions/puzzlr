@@ -20,7 +20,6 @@
       <div class="d-flex justify-space-between align-center">
         <div class="d-flex ga-2">
           <v-btn :disabled="!puzzleReady" @click="startSolve">Solve</v-btn>
-          <v-btn :disabled="!puzzleReady" @click="analyzePuzzle">Analyze</v-btn>
           <v-btn :disabled="!puzzleReady" @click="resetPuzzle">Reset</v-btn>
         </div>
         <div>
@@ -39,8 +38,16 @@
         <RenderedGrid ref="renderedGrid" />
       </v-sheet>
       <v-sheet elevation="2" class="pa-4" style="width: 480px">
+        <div class="d-flex ga-2 mb-4">
+          <v-btn :disabled="!readyToAnalyze" @click="analyzePuzzle"
+            >Analyze</v-btn
+          >
+          <v-btn :disabled="deductions.length == 0" @click="applyAllDeductions">
+            Apply All
+          </v-btn>
+        </div>
         <p>{{ statusText }} {{ hoveredDeduction }}</p>
-        <v-list density="compact" style="max-height: 72vh; overflow-y: auto">
+        <v-list density="compact" style="max-height: 65vh; overflow-y: auto">
           <v-list-item
             v-for="deduction in deductions"
             :key="deduction.index"
@@ -86,6 +93,7 @@ const puzzleFile = ref<File | null>(null);
 const deductions = ref<Deduction[]>([]);
 const statusText = ref<string>("");
 const hoveredDeduction = ref<Deduction | null>(null);
+let readyToAnalyze = false;
 
 watch(puzzleFile, (file) => {
   if (!file) return;
@@ -153,6 +161,7 @@ const resetPuzzle = () => {
   };
   renderedGrid.value?.resetPuzzle(livePuzzle, puzzleOptions);
   deductions.value = [];
+  readyToAnalyze = true;
   hoveredDeduction.value = null;
 };
 
@@ -165,6 +174,7 @@ const startSolve = () => {
   puzzleWorker.postMessage({ command: "solve" });
 };
 const analyzePuzzle = () => {
+  readyToAnalyze = false;
   statusText.value = "Analyzing...";
   puzzleWorker.postMessage({ command: "analyze" });
 };
@@ -173,13 +183,27 @@ const applyDeduction = (deduct_id: number) => {
 
   const [deduction] = deductions.value.splice(deduct_id, 1);
   deductions.value = deductions.value.map((d, i) => ({ ...d, index: i }));
-  //hoveredDeduction.value = deductions.value[deduction.index] ?? null;
+  hoveredDeduction.value = deductions.value[deduction.index] ?? null;
 
   const variable = livePuzzle.variables[deduction.variable];
   variable.value.splice(variable.value.indexOf(deduction.value), 1);
-  renderedGrid.value.renderPuzzle();
 
+  renderedGrid.value.renderPuzzle();
+  readyToAnalyze = true;
   puzzleWorker.postMessage({ command: "applydeduction", deduct_id });
+};
+const applyAllDeductions = () => {
+  if (!livePuzzle) return;
+
+  for (const deduction of deductions.value) {
+    const variable = livePuzzle.variables[deduction.variable];
+    variable.value.splice(variable.value.indexOf(deduction.value), 1);
+  }
+
+  deductions.value = [];
+  renderedGrid.value.renderPuzzle();
+  readyToAnalyze = false;
+  puzzleWorker.postMessage({ command: "applyall" });
 };
 
 const puzzleWorker = new Worker(new URL("../web-solver.ts", import.meta.url), {
@@ -211,7 +235,13 @@ puzzleWorker.onmessage = (e) => {
       statusText.value = "Error processing puzzle";
       break;
     case "analysis":
-      statusText.value = "Found " + e.data.deductions.length + " deductions";
+      if (
+        e.data.deductions.length == 0 &&
+        livePuzzle?.variables.every((v) => v.value.length == 1)
+      )
+        statusText.value = "Solved!";
+      else
+        statusText.value = "Found " + e.data.deductions.length + " deductions.";
       deductions.value = e.data.deductions;
       break;
   }
