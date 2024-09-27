@@ -238,12 +238,16 @@ puzzleWorker.onmessage = (e) => {
       statusText.value = "Error processing puzzle";
       break;
     case "analysis":
-      if (
-        e.data.deductions.length == 0 &&
-        livePuzzle?.variables.every((v) => v.value.length == 1)
-      )
-        statusText.value = "Solved!";
-      else
+      if (e.data.deductions.length == 0) {
+        if (livePuzzle?.variables.every((v) => v.value.length == 1))
+          statusText.value = "Solved!";
+        else if (e.data.depth == 0) {
+          statusText.value = "No more simplifications.";
+          readyToAnalyze = true;
+        } else {
+          statusText.value = "Couldn't find any more depth-1 deductions.";
+        }
+      } else
         statusText.value = "Found " + e.data.deductions.length + " deductions.";
       deductions.value = e.data.deductions;
       break;
