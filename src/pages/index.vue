@@ -81,17 +81,18 @@ type Deduction = {
   index: number;
 };
 
+const puzzleFile = ref<File | null>(null);
+const solveMode = ref("fast");
+const statusText = ref<string>("");
+let puzzleReady = ref<boolean>(false);
+
 let puzzleData: any = null;
 let puzzleType: any = null;
 let livePuzzle: Puzzle | null = null;
-let puzzleOptions: object = {};
+const renderedGrid = ref();
 let renderMessage: any = null;
-let puzzleReady = ref<boolean>(false);
-let renderedGrid = ref();
-const solveMode = ref("fast");
-const puzzleFile = ref<File | null>(null);
+
 const deductions = ref<Deduction[]>([]);
-const statusText = ref<string>("");
 const hoveredDeduction = ref<Deduction | null>(null);
 let readyToAnalyze = false;
 
@@ -151,7 +152,7 @@ const resetPuzzle = () => {
   }
 
   puzzleReady.value = true;
-  puzzleOptions = {
+  const puzzleOptions = {
     hintsTop: puzzleData.sums
       ? puzzleData.sums.slice(0, puzzleData.grid.width)
       : null,
@@ -168,6 +169,7 @@ const resetPuzzle = () => {
 watch(solveMode, () => {
   puzzleWorker.postMessage({ command: "changemode", data: solveMode.value });
 });
+
 const startSolve = () => {
   deductions.value = [];
   statusText.value = "Running...";
@@ -178,6 +180,7 @@ const analyzePuzzle = () => {
   statusText.value = "Analyzing...";
   puzzleWorker.postMessage({ command: "analyze" });
 };
+
 const applyDeduction = (deduct_id: number) => {
   if (!livePuzzle) return;
 
@@ -209,9 +212,6 @@ watch(hoveredDeduction, () => {
   renderedGrid.value.changeHighlight(hoveredDeduction.value?.variable ?? null);
 });
 
-const puzzleWorker = new Worker(new URL("../web-solver.ts", import.meta.url), {
-  type: "module",
-});
 const renderPuzzle = () => {
   if (!renderMessage) return;
   let data = renderMessage;
@@ -223,6 +223,10 @@ const renderPuzzle = () => {
   renderedGrid.value.renderPuzzle();
   statusText.value = data.output;
 };
+
+const puzzleWorker = new Worker(new URL("../web-solver.ts", import.meta.url), {
+  type: "module",
+});
 puzzleWorker.onmessage = (e) => {
   // console.log("Message received from child:", e.data);
   switch (e.data.status) {
@@ -248,8 +252,9 @@ puzzleWorker.onmessage = (e) => {
         } else {
           statusText.value = "Couldn't find any more depth-1 deductions.";
         }
-      } else
+      } else {
         statusText.value = "Found " + e.data.deductions.length + " deductions.";
+      }
       deductions.value = e.data.deductions;
       break;
   }
