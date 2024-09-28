@@ -93,7 +93,6 @@ function analyzePuzzle() {
   if (livePuzzle == null) return;
   let depth = 0;
   if (livePuzzle.ps.check_queue.length == 0) {
-    console.log("Doing this");
     depth = 1;
     livePuzzle.current_depth = 1;
     livePuzzle.prepare_next_depth();
@@ -101,19 +100,15 @@ function analyzePuzzle() {
     const base_partsol = livePuzzle.ps;
     const current_partsols = livePuzzle.partsols_by_depth[1];
     for (const new_partsol of current_partsols) {
-      console.log(new_partsol);
       new_partsol.merge_from_parents();
       new_partsol.restore(true);
       livePuzzle.simplify();
       new_partsol.done = true;
-      console.log(new_partsol.deductions_made);
 
       for (const parent of new_partsol.parents) {
-        if (parent.merge_from_children(new_partsol.assumptions))
-          console.log("Found something", parent.deduct_queue);
+        parent.find_child_agreements(new_partsol.assumptions);
       }
     }
-    // why am i not getting deductions?
     base_partsol.restore(true);
   } else {
     while (livePuzzle.ps.check_queue.length > 0) livePuzzle.next_check();

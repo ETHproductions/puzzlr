@@ -2,12 +2,6 @@
   <svg ref="solution"></svg>
 </template>
 
-<style>
-svg {
-  user-select: none;
-}
-</style>
-
 <script setup lang="ts">
 import { GridCell, GridEdge, PuzzleGrid } from "@/base";
 import Puzzle from "@/base/Puzzle";
@@ -566,3 +560,9 @@ onMounted(() => {
   svg = solution.value;
 });
 </script>
+
+<style>
+svg {
+  user-select: none;
+}
+</style>

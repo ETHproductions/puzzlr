@@ -4,16 +4,16 @@
       <v-row>
         <v-col cols="6">
           <v-file-input
+            v-model="puzzleFile"
             label="Puzzle input"
             accept=".json"
-            v-model="puzzleFile"
           />
         </v-col>
         <v-col cols="6">
           <v-select
+            v-model="solveMode"
             label="Solve mode"
             :items="['fast', 'thorough']"
-            v-model="solveMode"
           />
         </v-col>
       </v-row>
@@ -53,7 +53,7 @@
             :key="deduction.index"
             :title="
               livePuzzle?.variables[deduction.variable] +
-              ' =/> ' +
+              ' &ne; ' +
               deduction.value
             "
             @click="applyDeduction(deduction.index)"
@@ -242,7 +242,8 @@ puzzleWorker.onmessage = (e) => {
         if (livePuzzle?.variables.every((v) => v.value.length == 1))
           statusText.value = "Solved!";
         else if (e.data.depth == 0) {
-          statusText.value = "No more simplifications.";
+          statusText.value =
+            "No more simplifications. Analyze again to search at depth 1.";
           readyToAnalyze = true;
         } else {
           statusText.value = "Couldn't find any more depth-1 deductions.";

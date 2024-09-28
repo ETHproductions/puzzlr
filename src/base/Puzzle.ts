@@ -617,7 +617,7 @@ class PartialSolution {
       for (const deduction of list) this.try_deduction(deduction);
   }
 
-  merge_from_children(assumptions: Assumption[]) {
+  find_child_agreements(assumptions: Assumption[]) {
     const missing_variable = assumptions.find(
       (a) => !this.assumptions.some((b) => a.variable == b.variable),
     )?.variable;
@@ -688,6 +688,13 @@ class PartialSolution {
           .join("; "),
         "}",
       ]);
+      return true;
+    }
+    return false;
+  }
+
+  merge_from_children(assumptions: Assumption[]) {
+    if (this.find_child_agreements(assumptions)) {
       const base_partsol = this.puzzle.ps;
       this.restore(true);
       this.puzzle.simplify();
