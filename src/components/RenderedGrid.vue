@@ -164,7 +164,9 @@ function changeHighlight(var_id: number | null) {
   if (group) while (group.lastChild) group.removeChild(group.lastChild);
   if (var_id === null || !puzzle) return;
 
-  const variable = puzzle.variables[var_id];
+  drawHighlight(puzzle.variables[var_id]);
+}
+function drawHighlight(variable: PuzzleVariable | { vars: PuzzleVariable[] }) {
   if (variable instanceof GridCell) {
     createSVGElement("path", "highlight", {
       fill: "#00FFFFAA",
@@ -172,6 +174,8 @@ function changeHighlight(var_id: number | null) {
     });
   } else if (variable instanceof GridEdge) {
     addLine("highlight", variable, "#00FFFFAA", 5, "square");
+  } else if ("vars" in variable) {
+    for (const subvar of variable.vars) drawHighlight(subvar);
   }
 }
 
