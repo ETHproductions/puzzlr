@@ -43,9 +43,7 @@ export default class SlitherlinkPuzzle extends Puzzle {
       if (color)
         this.addConstraint(
           DIFF_EQUALS,
-          [edge, edge.leftCell, edge.rightCell].filter(
-            (x) => x,
-          ) as PuzzleVariable[],
+          [edge, edge.leftCell, edge.rightCell].filter((x) => x != null),
         );
     }
     for (const vert of this.grid.verts) {

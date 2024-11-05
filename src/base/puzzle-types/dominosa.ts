@@ -45,7 +45,7 @@ export default class DominosaPuzzle extends Puzzle {
 
     for (const cell of this.grid.cells) {
       const edges = [];
-      for (const edge of cell.edges) if (!edge.isEdgeOfGrid) edges.push(edge);
+      for (const edge of cell.edges) if (edge.isInnerEdge()) edges.push(edge);
       this.addConstraint(SUM_EQUALS, edges, 1);
     }
   }
