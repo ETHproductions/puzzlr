@@ -84,12 +84,15 @@ export default class PuzzleGrid {
     if (fromVert.adjacent.includes(toVert))
       throw new Error(
         "Edge already exists between vertices " +
-          fromVert.id +
-          " and " +
-          toVert.id,
+        fromVert.id +
+        " and " +
+        toVert.id,
       );
 
-    if (typeof vpos != "object") (noCell = vpos), (vpos = undefined);
+    if (typeof vpos != "object") {
+      noCell = vpos;
+      vpos = undefined;
+    }
 
     const newEdge = new GridEdge(this, fromVert, toVert, vpos);
     this.lastCell = null;
@@ -178,7 +181,10 @@ export default class PuzzleGrid {
       for (const vert of toVert.adjacent)
         if (vert != fromVert) {
           const newAngle = this.angleThroughVertex(fromVert, toVert, vert);
-          if (newAngle > maxAngle) (maxAngle = newAngle), (nextVert = vert);
+          if (newAngle > maxAngle) {
+            maxAngle = newAngle;
+            nextVert = vert;
+          }
         }
       if (nextVert == null) return false;
 

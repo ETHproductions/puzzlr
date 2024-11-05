@@ -1,4 +1,3 @@
-/* eslint-disable no-constant-condition */
 import { Constraint, ConstraintCheck } from "./Constraint.js";
 import PuzzleGrid from "./PuzzleGrid.js";
 import {

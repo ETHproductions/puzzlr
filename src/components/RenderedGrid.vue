@@ -19,7 +19,7 @@ export type Options = {
 
 let puzzle: Puzzle | null;
 
-let solution = ref();
+const solution = ref();
 let svg: SVGSVGElement;
 let grid: PuzzleGrid;
 let scale: number, renderfuncs: string[];
@@ -34,7 +34,7 @@ let width: number,
   maxX: number,
   minY: number,
   maxY: number;
-let groups = new Map<string, SVGGElement>();
+const groups = new Map<string, SVGGElement>();
 
 function resetPuzzle(newPuzzle: Puzzle, options: Options) {
   while (svg.lastChild) svg.removeChild(svg.lastChild);
@@ -45,9 +45,11 @@ function resetPuzzle(newPuzzle: Puzzle, options: Options) {
   ({ defaultScale: scale, funcs: renderfuncs } = puzzle.renderSettings);
   grid = puzzle.grid;
 
-  (minX = Infinity), (maxX = -Infinity);
-  (minY = Infinity), (maxY = -Infinity);
-  for (let vert of grid.verts) {
+  minX = Infinity;
+  maxX = -Infinity;
+  minY = Infinity;
+  maxY = -Infinity;
+  for (const vert of grid.verts) {
     if (vert.rpos.x < minX) minX = vert.rpos.x;
     if (vert.rpos.x > maxX) maxX = vert.rpos.x;
     if (vert.rpos.y < minY) minY = vert.rpos.y;
@@ -62,7 +64,7 @@ function resetPuzzle(newPuzzle: Puzzle, options: Options) {
   svg.setAttribute("width", width.toString());
   svg.setAttribute("height", height.toString());
 
-  for (let groupName of [
+  for (const groupName of [
     "cells-base",
     "edges-base",
     "hints",
@@ -71,7 +73,7 @@ function resetPuzzle(newPuzzle: Puzzle, options: Options) {
     //"cells-hitbox",
     //"edges-hitbox",
   ]) {
-    let group = document.createElementNS(ns, "g");
+    const group = document.createElementNS(ns, "g");
     groups.set(groupName, group);
     group.setAttribute("id", groupName);
     svg.appendChild(group);
@@ -107,9 +109,10 @@ function resetPuzzle(newPuzzle: Puzzle, options: Options) {
 
   const addEdgeHints = (hints: number[], x: number, y: number, dir: number) => {
     if (!hints) return;
-    for (let hint of hints) {
+    for (const hint of hints) {
       if (hint > -1) addHint(hint.toString(), convertX(x), convertY(y));
-      dir ? (y += 1) : (x += 1);
+      if (dir) y += 1;
+      else x += 1;
     }
   };
 
@@ -127,26 +130,26 @@ function resetPuzzle(newPuzzle: Puzzle, options: Options) {
 function renderPuzzle() {
   elemBuffer = [];
 
-  let edgefuncs = renderfuncs
+  const edgefuncs = renderfuncs
     .map((f) => renderElements.edge[f])
     .filter((f) => f);
-  let cellfuncs = renderfuncs
+  const cellfuncs = renderfuncs
     .map((f) => renderElements.cell[f])
     .filter((f) => f);
 
-  let render = (
+  const render = (
     objects: PuzzleVariable[],
     cache: { elems: SVGElement[]; value: PuzzleVariableValues }[],
     funcs: RenderFunc<any>[],
   ) => {
-    for (let i in objects) {
-      let obj = objects[i];
+    for (const i in objects) {
+      const obj = objects[i];
       let cached = cache[i];
       if (!cached) cached = cache[i] = { elems: [], value: [] };
       else if (obj.value + "" == cached.value + "") continue;
-      for (let elem of cached.elems) elem.parentElement?.removeChild(elem);
+      for (const elem of cached.elems) elem.parentElement?.removeChild(elem);
 
-      for (let func of funcs) {
+      for (const func of funcs) {
         func(obj);
       }
       cached.elems = elemBuffer;
@@ -160,7 +163,7 @@ function renderPuzzle() {
 }
 
 function changeHighlight(var_id: number | null) {
-  let group = groups.get("highlight");
+  const group = groups.get("highlight");
   if (group) while (group.lastChild) group.removeChild(group.lastChild);
   if (var_id === null || !puzzle) return;
 
@@ -187,11 +190,11 @@ function convertY(y: number) {
 }
 
 function createSVGElement(name: string, groupName: string, attributes: any) {
-  let elem = document.createElementNS(ns, name);
-  for (let prop in attributes) {
+  const elem = document.createElementNS(ns, name);
+  for (const prop in attributes) {
     elem.setAttributeNS(null, prop, attributes[prop]);
   }
-  let group = groups.get(groupName);
+  const group = groups.get(groupName);
   if (!group)
     throw new Error("Could not find SVG group with name " + groupName);
   group.appendChild(elem);
@@ -205,7 +208,7 @@ function addHint(
   color = "black",
   size = scale / 2,
 ) {
-  let text = createSVGElement("text", "hints", {
+  const text = createSVGElement("text", "hints", {
     fill: color,
     style: "font: bold " + size + "px sans-serif",
     "text-anchor": "middle",
@@ -328,9 +331,9 @@ const renderElements: {
           d:
             [...Array(10)]
               .map((_, i) => {
-                let { x, y } = cell.midpoint;
-                let angle = i * (Math.PI / 5) - Math.PI / 2;
-                let r = [0.3, 0.15][i % 2];
+                const { x, y } = cell.midpoint;
+                const angle = i * (Math.PI / 5) - Math.PI / 2;
+                const r = [0.3, 0.15][i % 2];
                 return (
                   (i > 0 ? "L " : "M ") +
                   [
@@ -349,7 +352,7 @@ const renderElements: {
     },
     numhint: (cell) => {
       if (cell.hint === undefined || cell.hint == -1) return;
-      let { x, y } = cell.midpoint;
+      const { x, y } = cell.midpoint;
       addHint(
         cell.hint.toString(),
         convertX(x),
@@ -360,7 +363,7 @@ const renderElements: {
     },
     sudoku: (cell) => {
       if (cell.hint !== undefined && cell.hint != -1) return;
-      let { x, y } = cell.midpoint;
+      const { x, y } = cell.midpoint;
       if (cell.value.length == 1) {
         addHint(
           cell.value[0].toString(36).toUpperCase(),
@@ -371,12 +374,12 @@ const renderElements: {
         );
         return;
       }
-      let maxvals = grid.width;
-      let numacross = Math.ceil(maxvals ** 0.5);
-      let numdown = Math.ceil(maxvals / numacross);
-      let fontsize = scale / numacross;
+      const maxvals = grid.width;
+      const numacross = Math.ceil(maxvals ** 0.5);
+      const numdown = Math.ceil(maxvals / numacross);
+      const fontsize = scale / numacross;
       for (let i = 0; i < maxvals; i++) {
-        let val = (i + 1).toString(36).toUpperCase();
+        const val = (i + 1).toString(36).toUpperCase();
         if (cell.valueHas(i + 1)) {
           addHint(
             val,
@@ -391,7 +394,7 @@ const renderElements: {
     stitchhole: (cell) => {
       if (cell.value.length != 1) return;
       if (cell.value[0] == 1) {
-        let mid = cell.midpoint;
+        const mid = cell.midpoint;
 
         createSVGElement("circle", "answer", {
           stroke: "black",
@@ -402,7 +405,7 @@ const renderElements: {
           r: scale / 4,
         });
       } else if (cell.value[0] == 0) {
-        let mid = cell.midpoint;
+        const mid = cell.midpoint;
 
         createSVGElement("line", "answer", {
           stroke: "#B00",
@@ -423,17 +426,17 @@ const renderElements: {
       }
     },
     binarythermo: (cell: GridCell) => {
-      let prevCell = cell.adjacentEdge.find(
+      const prevCell = cell.adjacentEdge.find(
         (c) =>
           c.area_id == cell.area_id &&
           c.thermoIndex == (cell.thermoIndex ?? 0) - 1,
       );
-      let nextCell = cell.adjacentEdge.find(
+      const nextCell = cell.adjacentEdge.find(
         (c) =>
           c.area_id == cell.area_id &&
           c.thermoIndex == (cell.thermoIndex ?? 0) + 1,
       );
-      let prevDir = prevCell
+      const prevDir = prevCell
         ? prevCell.vpos.x > cell.vpos.x
           ? 0
           : prevCell.vpos.y > cell.vpos.y
@@ -442,7 +445,7 @@ const renderElements: {
               ? 2
               : 3
         : -1;
-      let nextDir = nextCell
+      const nextDir = nextCell
         ? nextCell.vpos.x > cell.vpos.x
           ? 0
           : nextCell.vpos.y > cell.vpos.y
@@ -458,9 +461,9 @@ const renderElements: {
       let dir1 = prevDir == -1 ? nextDir : prevDir;
       // dir2 will just be the other direction if there is one;
       // if not, -1 represents start of thermo, -2 is end of thermo
-      let dir2 = prevDir == -1 ? -1 : nextDir == -1 ? -2 : nextDir;
+      const dir2 = prevDir == -1 ? -1 : nextDir == -1 ? -2 : nextDir;
 
-      let mid = cell.midpoint;
+      const mid = cell.midpoint;
       // takes a list of [x, y] points where x/y are in [-0.5, 0.5],
       // rotates based on dir1, and scales and translates to the real
       // location of the cell in the render
@@ -477,7 +480,7 @@ const renderElements: {
 
       // simplest case first: straight line (2 directions)
       if (dir2 >= 0 && Math.abs(dir1 - dir2) == 2) {
-        let p = [
+        const p = [
           [0.5, -tw],
           [-0.5, -tw],
           [-0.5, tw],
@@ -499,7 +502,7 @@ const renderElements: {
       if (dir2 < 0) {
         const bw = dir2 == -2 ? tw : tw + 0.12; // bulb width
         const bo = (bw ** 2 - tw ** 2) ** 0.5; // bulb offset of intersection
-        let p = [
+        const p = [
           [0.5, -tw],
           [bo, -tw],
           [bo, tw],
@@ -526,7 +529,7 @@ const renderElements: {
       // we convert these into a single number 0-3 in this order
       dir1 = Math.abs(dir1 - dir2) == 3 ? 3 : Math.min(dir1, dir2);
 
-      let p = [
+      const p = [
         [0.5, -tw],
         [0, -tw],
         [-tw, 0],

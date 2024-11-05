@@ -84,7 +84,7 @@ type Deduction = {
 const puzzleFile = ref<File | null>(null);
 const solveMode = ref("fast");
 const statusText = ref<string>("");
-let puzzleReady = ref<boolean>(false);
+const puzzleReady = ref<boolean>(false);
 
 let puzzleData: any = null;
 let puzzleType: any = null;
@@ -102,7 +102,7 @@ watch(puzzleFile, (file) => {
   puzzleReady.value = false;
   console.log("Reading data from", file.name);
 
-  let reader = new FileReader();
+  const reader = new FileReader();
   reader.readAsText(file, "UTF-8");
   reader.onload = (e) => {
     if (
@@ -127,7 +127,7 @@ watch(puzzleFile, (file) => {
       console.log("Could not load puzzle data.");
       return;
     }
-    let type = puzzleData.type;
+    const type = puzzleData.type;
 
     puzzleType = puzzleTypes.get(type);
     if (!puzzleType) {
@@ -214,9 +214,9 @@ watch(hoveredDeduction, () => {
 
 const renderPuzzle = () => {
   if (!renderMessage) return;
-  let data = renderMessage;
+  const data = renderMessage;
   renderMessage = null;
-  let answer: PuzzleVariableValues[] = data.answer;
+  const answer: PuzzleVariableValues[] = data.answer;
   answer.forEach((v, i) => {
     livePuzzle!.variables[i].value = v;
   });
