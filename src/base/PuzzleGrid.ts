@@ -1,4 +1,5 @@
 import { GridCell, GridEdge, GridVertex } from "./index.js";
+import Array2D from "./util/Array2D.js";
 
 /**
  * How to make a custom puzzle grid
@@ -23,6 +24,8 @@ export default class PuzzleGrid {
   verts: GridVertex[] = [];
   edges: GridEdge[] = [];
 
+  cellmap: Array2D<GridCell>;
+
   lastCell?: GridCell | null = null;
 
   /**
@@ -34,6 +37,7 @@ export default class PuzzleGrid {
       throw new Error("Grid dimensions must be positive");
     this.#width = w;
     this.#height = h;
+    this.cellmap = new Array2D(1, 1);
   }
 
   /**
@@ -84,9 +88,9 @@ export default class PuzzleGrid {
     if (fromVert.adjacent.includes(toVert))
       throw new Error(
         "Edge already exists between vertices " +
-        fromVert.id +
-        " and " +
-        toVert.id,
+          fromVert.id +
+          " and " +
+          toVert.id,
       );
 
     if (typeof vpos != "object") {
@@ -284,6 +288,7 @@ export default class PuzzleGrid {
     this.#finalized = true;
     delete this.lastCell;
     for (const cell of this.cells) cell.finalize();
+    if (this.cellmap.size == 1) this.cellmap = new Array2D([this.cells]);
   }
 
   get width() {

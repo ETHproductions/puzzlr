@@ -25,7 +25,7 @@ export function SUM_EQUALS_IF(
   var_target: PuzzleVariableValue,
   sum_target: number,
 ) {
-  if (var1.value.length > 1 || var1.value[0] != var_target) return true;
+  if (!var1.valueIs(var_target)) return true;
   return SUM_EQUALS(vars, sum_target);
 }
 

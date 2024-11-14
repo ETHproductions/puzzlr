@@ -9,13 +9,9 @@ export default class NorinoriPuzzle extends Puzzle {
   get renderSettings() {
     return { defaultScale: 30, funcs: ["edgearea", "binarygrey"] };
   }
-
-  grid: SquareGrid;
   areas: { x: number; y: number }[][];
   constructor({ areas }: { areas: { x: number; y: number }[][] }) {
-    const grid = SquareGrid.fromAreas(areas);
-    super(grid);
-    this.grid = grid;
+    super(SquareGrid.fromAreas(areas));
     this.areas = areas;
 
     for (const area of areas) {

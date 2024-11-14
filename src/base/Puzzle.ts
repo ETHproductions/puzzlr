@@ -13,8 +13,8 @@ import {
  * theoretically be represented and solved with a generic algorithm. In prac-
  * tice, however, some puzzles play more nicely with this system than others.
  */
-export default class Puzzle {
-  grid: PuzzleGrid;
+export default class Puzzle<TGrid extends PuzzleGrid = PuzzleGrid> {
+  grid: TGrid;
   options: any;
   variables: PuzzleVariable[] = [];
   constraints: Constraint[] = [];
@@ -41,7 +41,7 @@ export default class Puzzle {
   /**
    * Takes a grid and begins the process of creating a puzzle.
    */
-  constructor(grid: PuzzleGrid) {
+  constructor(grid: TGrid) {
     this.grid = grid;
   }
 

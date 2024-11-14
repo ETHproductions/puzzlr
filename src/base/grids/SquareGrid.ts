@@ -2,7 +2,6 @@ import { PuzzleGrid, GridCell, GridEdge, GridVertex } from "../index.js";
 import Array2D from "../util/Array2D.js";
 
 export default class SquareGrid extends PuzzleGrid {
-  cellmap: Array2D<GridCell>;
   areamap: Array2D<number | null>;
   vertmap: Array2D<GridVertex>;
   edgemap: { vert: Array2D<GridEdge>; horiz: Array2D<GridEdge> };

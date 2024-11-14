@@ -3,7 +3,7 @@ import Puzzle from "../Puzzle.js";
 import { CONTAINS_ALL } from "../generic-constraints.js";
 import SquareGrid from "../grids/SquareGrid.js";
 
-export default class SudokuPuzzle extends Puzzle {
+export default class SudokuPuzzle extends Puzzle<SquareGrid> {
   static get type() {
     return "sudoku";
   }
@@ -37,8 +37,7 @@ export default class SudokuPuzzle extends Puzzle {
       ),
     );
 
-    const _grid = SquareGrid.fromAreas(areamap);
-    super(_grid);
+    super(SquareGrid.fromAreas(areamap));
 
     const areas: GridCell[][] = [];
     const values: number[] = [];
@@ -46,7 +45,7 @@ export default class SudokuPuzzle extends Puzzle {
       areas.push([]);
       values.push(i + 1);
     }
-    _grid.cellmap.map((cell, { x, y }) => {
+    this.grid.cellmap.map((cell, { x, y }) => {
       const hint = task[y][x];
       if (hint && hint != -1) cell.hint = hint;
       this.addVariable(
@@ -57,7 +56,7 @@ export default class SudokuPuzzle extends Puzzle {
         cell,
       );
     });
-    [..._grid.cellRows, ..._grid.cellCols, ...areas].forEach((x) =>
+    [...this.grid.cellRows, ...this.grid.cellCols, ...areas].forEach((x) =>
       this.addConstraint(CONTAINS_ALL, x, values.slice()),
     );
   }

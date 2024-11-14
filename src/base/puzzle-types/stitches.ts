@@ -3,7 +3,7 @@ import Puzzle from "../Puzzle.js";
 import { SUM_EQUALS, SUM_EQUALS_IF } from "../generic-constraints.js";
 import SquareGrid from "../grids/SquareGrid.js";
 
-export default class StitchesPuzzle extends Puzzle {
+export default class StitchesPuzzle extends Puzzle<SquareGrid> {
   static get type() {
     return "stitches";
   }
@@ -24,8 +24,7 @@ export default class StitchesPuzzle extends Puzzle {
     areas: { x: number; y: number }[][];
     sums: number[];
   }) {
-    const _grid = SquareGrid.fromAreas(areas);
-    super(_grid);
+    super(SquareGrid.fromAreas(areas));
     if (this.grid.width + this.grid.height != sums.length)
       throw new Error(
         "Task length must equal width of grid plus height of grid",
@@ -69,7 +68,7 @@ export default class StitchesPuzzle extends Puzzle {
     }
 
     let i = 0;
-    for (const vars of [..._grid.cellCols, ..._grid.cellRows]) {
+    for (const vars of [...this.grid.cellCols, ...this.grid.cellRows]) {
       this.addConstraint(SUM_EQUALS, vars, sums[i++]);
     }
   }

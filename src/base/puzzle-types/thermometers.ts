@@ -4,7 +4,7 @@ import { PuzzleVariable } from "../PuzzleVariable.js";
 import { SUM_EQUALS } from "../generic-constraints.js";
 import SquareGrid from "../grids/SquareGrid.js";
 
-export default class ThermometersPuzzle extends Puzzle {
+export default class ThermometersPuzzle extends Puzzle<SquareGrid> {
   static get type() {
     return "thermometers";
   }
@@ -23,8 +23,7 @@ export default class ThermometersPuzzle extends Puzzle {
     thermometers: { x: number; y: number }[][];
     sums: number[];
   }) {
-    const _grid = SquareGrid.fromAreas(thermometers);
-    super(_grid);
+    super(SquareGrid.fromAreas(thermometers));
     if (this.grid.width + this.grid.height != sums.length)
       throw new Error(
         "Task length must equal width of grid plus height of grid",
@@ -48,7 +47,7 @@ export default class ThermometersPuzzle extends Puzzle {
       const thermo: Thermo = new Thermo();
       this.addVariable(thermo, [0], false);
       for (const pos of area) {
-        const cell = _grid.cellmap.get2D(pos.x, pos.y);
+        const cell = this.grid.cellmap.get2D(pos.x, pos.y);
         this.addVariable(cell, [0, 1]);
 
         thermo.vars.push(cell);
@@ -61,7 +60,7 @@ export default class ThermometersPuzzle extends Puzzle {
     }
 
     let i = 0;
-    for (const vars of [..._grid.cellCols, ..._grid.cellRows]) {
+    for (const vars of [...this.grid.cellCols, ...this.grid.cellRows]) {
       this.addConstraint(SUM_EQUALS, vars, sums[i++]);
     }
   }

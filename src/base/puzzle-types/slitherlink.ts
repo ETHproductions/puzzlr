@@ -23,8 +23,7 @@ export default class SlitherlinkPuzzle extends Puzzle {
     task: number[][];
     color: boolean;
   }) {
-    const _grid = SquareGrid.fromSize(grid.width, grid.height);
-    super(_grid);
+    super(SquareGrid.fromSize(grid.width, grid.height));
 
     function DIFF_EQUALS([
       edge,
@@ -49,7 +48,7 @@ export default class SlitherlinkPuzzle extends Puzzle {
     for (const vert of this.grid.verts) {
       this.addConstraint(SUM_EQUALS_ANY, vert.edges, [0, 2]);
     }
-    _grid.cellmap.map((cell, { x, y }) => {
+    this.grid.cellmap.map((cell, { x, y }) => {
       if (color) this.addVariable(cell, [0, 1], false);
       const hint = task[y][x];
       if (hint != -1) {

@@ -18,11 +18,10 @@ export default class DominosaPuzzle extends Puzzle {
     grid: { width: number; height: number };
     task: number[][];
   }) {
-    const _grid = SquareGrid.fromSize(grid.width, grid.height);
-    super(_grid);
+    super(SquareGrid.fromSize(grid.width, grid.height));
 
     let maxNum = 0;
-    _grid.cellmap.map((cell, { x, y }) => {
+    this.grid.cellmap.map((cell, { x, y }) => {
       cell.hint = task[y][x];
       if (cell.hint > maxNum) maxNum = cell.hint;
     });

@@ -18,10 +18,9 @@ export default class YinYangPuzzle extends Puzzle {
     grid: { width: number; height: number };
     task: number[][];
   }) {
-    const _grid = SquareGrid.fromSize(grid.width, grid.height);
-    super(_grid);
+    super(SquareGrid.fromSize(grid.width, grid.height));
 
-    _grid.cellmap.map((cell, { x, y }) => {
+    this.grid.cellmap.map((cell, { x, y }) => {
       const hint = task[y][x];
       if (hint != -1) cell.hint = hint;
       this.addVariable(cell, hint != -1 ? [hint] : [0, 1]);
@@ -49,7 +48,7 @@ export default class YinYangPuzzle extends Puzzle {
       return false;
     }
 
-    _grid.verts.map(
+    this.grid.verts.map(
       (vert) =>
         vert.cells.length == 4 &&
         (this.addConstraint(NOT_ALL_EQUAL, vert.cells as GridCell[]),
