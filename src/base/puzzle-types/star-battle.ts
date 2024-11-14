@@ -33,7 +33,7 @@ export default class StarBattlePuzzle extends Puzzle<SquareGrid> {
       this.addConstraint(SUM_EQUALS, cells, star_count);
     }
 
-    for (const vars of [...this.grid.cellCols, ...this.grid.cellRows]) {
+    for (const vars of this.grid.cellLines) {
       this.addConstraint(SUM_EQUALS, vars, star_count);
     }
   }

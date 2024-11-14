@@ -56,7 +56,7 @@ export default class SudokuPuzzle extends Puzzle<SquareGrid> {
         cell,
       );
     });
-    [...this.grid.cellRows, ...this.grid.cellCols, ...areas].forEach((x) =>
+    [...this.grid.cellLines, ...areas].forEach((x) =>
       this.addConstraint(CONTAINS_ALL, x, values.slice()),
     );
   }

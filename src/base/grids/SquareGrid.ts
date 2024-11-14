@@ -194,4 +194,11 @@ export default class SquareGrid extends PuzzleGrid {
     }
     return cols;
   }
+
+  /**
+   * Returns the cells in each row and column as an Array of Arrays.
+   */
+  get cellLines() {
+    return [...this.cellRows, ...this.cellCols];
+  }
 }
