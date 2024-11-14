@@ -32,7 +32,7 @@ export default class DominosaPuzzle extends Puzzle {
       }
     }
     for (const edge of this.grid.edges) {
-      if (!edge.leftCell || !edge.rightCell) continue;
+      if (!edge.isInnerEdge()) continue;
       this.addVariable(edge, [0, 1]);
 
       const id = [edge.leftCell.hint!, edge.rightCell.hint!];

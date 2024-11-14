@@ -59,7 +59,7 @@ export default class GridEdge extends PuzzleVariable {
     throw new Error("Cell provided is not adjacent to this edge");
   }
 
-  isInnerEdge(): this is GridEdge & { leftCell: GridCell, rightCell: GridCell } {
+  isInnerEdge(): this is GridInnerEdge {
     return this.leftCell != null && this.rightCell != null;
   }
 
@@ -71,3 +71,4 @@ export default class GridEdge extends PuzzleVariable {
     return "edge";
   }
 }
+type GridInnerEdge = GridEdge & { leftCell: GridCell; rightCell: GridCell };
